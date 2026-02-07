@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sort"
 
 	c "github.com/pardnchiu/go-agent-skills/internal/client"
+	"github.com/pardnchiu/go-agent-skills/internal/skill"
 )
 
 func main() {
@@ -15,6 +17,38 @@ func main() {
 		slog.Error("failed to load Copilot token",
 			slog.String("error", err.Error()))
 		os.Exit(1)
+	}
+
+	if os.Args[1] == "list" {
+		scanner := skill.NewScanner()
+		skillList, err := scanner.Scan()
+		if err != nil {
+			slog.Error("failed to scan skills", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+
+		if len(skillList.ByName) == 0 {
+			fmt.Println("No skills found")
+			fmt.Println("\nScanned paths:")
+			for _, path := range skillList.Paths {
+				fmt.Printf("  - %s\n", path)
+			}
+			return
+		}
+
+		names := skillList.List()
+		sort.Strings(names)
+
+		fmt.Printf("Found %d skill(s):\n\n", len(names))
+		for _, name := range names {
+			s := skillList.ByName[name]
+			fmt.Printf("• %s\n", name)
+			if s.Description != "" {
+				fmt.Printf("  %s\n", s.Description)
+			}
+			fmt.Printf("  Path: %s\n\n", s.Path)
+		}
+		return
 	}
 
 	slog.Info("successfully loaded Copilot token",

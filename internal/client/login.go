@@ -1,82 +1,29 @@
-package main
+package client
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"time"
+
+	"github.com/pardnchiu/go-agent-skills/internal/utils"
 )
 
 var (
-	CopilotClientID           = "Iv1.b507a08c87ecfe98"
 	GitHubDeviceCodeAPI       = "https://github.com/login/device/code"
 	GitHubOauthAccessTokenAPI = "https://github.com/login/oauth/access_token"
+	CopilotTokenURL           = "https://api.github.com/copilot_internal/v2/token"
+	CopilotClientID           = "Iv1.b507a08c87ecfe98"
 )
 
 var ErrAuthorizationPending = fmt.Errorf("authorization pending") // pre declare error for ensuring padding wont cause login exit
-
-func main() {
-	_, token, err := NewCopilot()
-	if err != nil {
-		slog.Error("failed to load Copilot token",
-			slog.String("error", err.Error()))
-		os.Exit(1)
-	}
-
-	slog.Info("successfully loaded Copilot token",
-		slog.String("access_token", token.AccessToken),
-		slog.String("token_type", token.TokenType),
-		slog.String("scope", token.Scope),
-		slog.Time("expires_at", token.ExpiresAt))
-}
-
-type CopilotToken struct {
-	AccessToken string    `json:"access_token"`
-	TokenType   string    `json:"token_type"`
-	Scope       string    `json:"scope"`
-	ExpiresAt   time.Time `json:"expires_at"`
-}
-
-func NewCopilot() (string, *CopilotToken, error) {
-	var token *CopilotToken
-
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", nil, err
-	}
-
-	path := filepath.Join(home, ".config", "go-agent-skills", "copilot_token.json")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			// * if is not exist, then login
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-			defer cancel()
-
-			token, err = CopilotLogin(ctx, path)
-			if err != nil {
-				return "", nil, err
-			}
-			return path, token, nil
-		}
-		return "", nil, err
-	}
-
-	if err := json.Unmarshal(data, &token); err != nil {
-		return "", nil, err
-	}
-
-	return path, token, nil
-}
 
 type GopilotDeviceCode struct {
 	DeviceCode      string `json:"device_code"`
@@ -87,9 +34,11 @@ type GopilotDeviceCode struct {
 }
 
 func CopilotLogin(ctx context.Context, tokenPath string) (*CopilotToken, error) {
-	code, err := POSTForm[GopilotDeviceCode](ctx, nil, GitHubDeviceCodeAPI, url.Values{
-		"client_id": {CopilotClientID},
-	})
+	code, _, err := utils.POSTForm[GopilotDeviceCode](ctx, nil, GitHubDeviceCodeAPI,
+		map[string]string{},
+		url.Values{
+			"client_id": {CopilotClientID},
+		})
 
 	expires := time.Now().Add(time.Duration(code.ExpiresIn) * time.Second)
 	fmt.Printf("[*] url:      %-42s\n", code.VerificationURI)
@@ -165,11 +114,13 @@ type GopilotAccessToken struct {
 }
 
 func GetAccessToken(ctx context.Context, client *http.Client, deviceCode string) (*CopilotToken, error) {
-	accessToken, err := POSTForm[GopilotAccessToken](ctx, client, GitHubOauthAccessTokenAPI, url.Values{
-		"client_id":   {CopilotClientID},
-		"device_code": {deviceCode},
-		"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
-	})
+	accessToken, _, err := utils.POSTForm[GopilotAccessToken](ctx, client, GitHubOauthAccessTokenAPI,
+		map[string]string{},
+		url.Values{
+			"client_id":   {CopilotClientID},
+			"device_code": {deviceCode},
+			"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
+		})
 	if err != nil {
 		return nil, err
 	}
@@ -186,31 +137,4 @@ func GetAccessToken(ctx context.Context, client *http.Client, deviceCode string)
 	default:
 		return nil, fmt.Errorf("oauth error: %s", accessToken.Error)
 	}
-}
-
-func POSTForm[T any](ctx context.Context, client *http.Client, api string, form url.Values) (T, error) {
-	var result T
-
-	if client == nil {
-		client = &http.Client{}
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", api, strings.NewReader(form.Encode()))
-	if err != nil {
-		return result, err
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return result, err
-	}
-	defer resp.Body.Close()
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return result, err
-	}
-
-	return result, nil
 }

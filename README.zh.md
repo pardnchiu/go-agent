@@ -8,7 +8,7 @@
 [![license](https://img.shields.io/github/license/pardnchiu/go-agent-skills)](LICENSE)
 [![version](https://img.shields.io/github/v/tag/pardnchiu/go-agent-skills?label=release)](https://github.com/pardnchiu/go-agent-skills/releases)
 
-> 一個輕量級的 Go CLI 工具，用於執行 skill 並整合 GitHub Copilot 認證機制
+> 輕量級 Go CLI 工具，透過 GitHub Copilot 認證執行 AI skill 並整合完整的檔案系統工具鏈
 
 ## 目錄
 
@@ -25,11 +25,12 @@
 ## 功能特點
 
 - **GitHub Copilot 認證**：支援裝置碼登入流程與 token 自動刷新機制
-- **Skill 掃描**：自動掃描 `.claude/skills` 目錄下的所有可用 skill
-- **Skill 執行**：透過 Copilot Chat API 執行 skill 並處理工具呼叫循環
-- **工具執行器**：內建完整的工具執行系統
-- **Token 管理**：自動處理 token 過期與更新，確保認證狀態持續有效
-- **命令列介面**：提供 `list` 與 `run` 指令來管理與執行 skill
+- **多目錄 Skill 掃描**：自動掃描 `.claude/skills`、`.skills`、`.opencode/skills`、`.openai/skills`、`.codex/skills` 及 `/mnt/skills/*` 下的所有可用 skill
+- **Skill 執行引擎**：透過 Copilot Chat API 執行 skill 並處理最多 128 次工具呼叫循環
+- **完整工具系統**：內建 `read_file`、`list_files`、`glob_files`、`write_file`、`search_content`、`run_command` 六種工具
+- **安全指令執行**：指令白名單機制、`rm` 自動轉為 `.Trash` 安全刪除、shell 操作符支援
+- **目錄排除機制**：自動排除 `.git`、`node_modules`、`vendor`、`dist` 等目錄
+- **互動式確認**：工具呼叫前提示使用者確認，支援 `--allow` 旗標跳過確認
 
 ### 開發路線圖
 
@@ -40,39 +41,30 @@
 - [ ] 支援 OpenAI API key 認證
 - [ ] 支援 OpenAI 裝置認證
 
-**Skill 管理：**
-- [x] 支援從多個目錄列出/執行 skill（`.claude/skills`、`.skills`、`.opencode/skills`、`.openai/skills`、`.codex/skills`、`/mnt/skills/*`）
-
-**工具實作：**
-- [x] 實作 `read_file(path)` - 讀取檔案內容
-- [ ] 實作 `list_files(path, recursive)` - 列出目錄內容
-- [ ] 實作 `glob_files(pattern)` - 依模式尋找檔案
-- [ ] 實作 `search_content(pattern, file_pattern)` - 在檔案中搜尋文字
-- [ ] 實作 `write_file(path, content)` - 寫入/建立檔案
-- [ ] 實作 `run_command(command)` - 執行 shell 指令 (git, go, npm, python3, 等等)
-
 ## 架構
 
 ```mermaid
 graph TB
     CLI[CLI Main] --> Scanner[Skill Scanner]
     CLI --> Copilot[Copilot Agent]
-    
+
     Scanner --> SkillList[Skill List]
     SkillList --> Parser[Skill Parser]
-    
+
     Copilot --> Login[Device Login]
     Copilot --> Refresh[Token Refresh]
     Copilot --> Exec[Skill Executor]
-    
+
     Exec --> API[Copilot Chat API]
     Exec --> ToolExec[Tool Executor]
-    
-    ToolExec --> Bash[bash]
-    ToolExec --> View[view]
-    ToolExec --> Edit[edit]
-    ToolExec --> Create[create]
-    
+
+    ToolExec --> ReadFile[read_file]
+    ToolExec --> ListFiles[list_files]
+    ToolExec --> GlobFiles[glob_files]
+    ToolExec --> WriteFile[write_file]
+    ToolExec --> SearchContent[search_content]
+    ToolExec --> RunCommand[run_command]
+
     style CLI fill:#e1f5ff
     style Copilot fill:#ffe1e1
     style Scanner fill:#e1ffe1
@@ -113,8 +105,9 @@ go install github.com/pardnchiu/go-agent-skills/cmd/cli@latest
 系統會顯示：
 1. 使用者代碼（User Code）
 2. 驗證網址（Verification URI）
+3. 過期時間
 
-在瀏覽器中開啟驗證網址並輸入使用者代碼完成認證。
+按下 Enter 後會自動開啟瀏覽器，輸入使用者代碼完成認證。Token 儲存於 `~/.config/go-agent-skills/copilot_token.json`。
 
 ### 列出所有可用的 Skill
 
@@ -127,6 +120,10 @@ go install github.com/pardnchiu/go-agent-skills/cmd/cli@latest
 ```
 Found 3 skill(s):
 
+• commit-generate
+  從 git diff 生成單句提交訊息
+  Path: /Users/user/.claude/skills/commit-generate
+
 • readme-generate
   從原始碼分析自動生成雙語 README
   Path: /Users/user/.claude/skills/readme-generate
@@ -134,10 +131,6 @@ Found 3 skill(s):
 • version-generate
   從最新的 git tag 到 HEAD 生成結構化變更日誌並推薦新版本
   Path: /Users/user/.claude/skills/version-generate
-
-• commit-generate
-  從 git diff 生成單句提交訊息
-  Path: /Users/user/.claude/skills/commit-generate
 ```
 
 ### 執行 Skill
@@ -149,21 +142,56 @@ Found 3 skill(s):
 範例：
 
 ```bash
+# 互動模式（每次工具呼叫前確認）
 ./agent-skills run commit-generate "generate commit message from current changes"
+
+# 自動模式（跳過確認）
+./agent-skills run readme-generate "generate readme" --allow
 ```
 
 ## CLI 參考
 
 | 指令 | 語法 | 描述 |
-|---------|--------|-------------|
+|------|------|------|
 | `list` | `./agent-skills list` | 列出所有已安裝的 skill |
-| `run` | `./agent-skills run <skill> <input>` | 執行指定的 skill |
+| `run` | `./agent-skills run <skill> <input> [--allow]` | 執行指定的 skill |
+
+### 旗標
+
+| 旗標 | 描述 |
+|------|------|
+| `--allow` | 跳過工具呼叫的互動式確認提示 |
 
 ### 環境變數
 
 | 變數 | 預設值 | 描述 |
-|----------|---------|-------------|
-| `HOME` | - | 用於定位 token 儲存路徑 `~/.copilot/` |
+|------|--------|------|
+| `HOME` | - | 用於定位 token 儲存路徑 `~/.config/go-agent-skills/` |
+
+### 內建工具
+
+| 工具 | 參數 | 描述 |
+|------|------|------|
+| `read_file` | `path` | 讀取指定檔案內容 |
+| `list_files` | `path`, `recursive` | 列出目錄內容，支援遞迴模式 |
+| `glob_files` | `pattern` | 依 glob 模式尋找檔案（如 `**/*.go`） |
+| `write_file` | `path`, `content` | 寫入或建立檔案 |
+| `search_content` | `pattern`, `file_pattern` | 以正規表示式搜尋檔案內容 |
+| `run_command` | `command` | 執行白名單內的 shell 指令 |
+
+### 允許的指令
+
+| 類別 | 指令 |
+|------|------|
+| 版本控制 | `git` |
+| 程式語言與套件管理 | `go`, `node`, `npm`, `yarn`, `pnpm`, `python`, `python3`, `pip`, `pip3` |
+| 檔案操作 | `ls`, `cat`, `head`, `tail`, `pwd`, `mkdir`, `touch`, `cp`, `mv`, `rm`* |
+| 文字處理 | `grep`, `sed`, `awk`, `sort`, `uniq`, `diff`, `cut`, `tr`, `wc` |
+| 搜尋 | `find` |
+| 資料格式 | `jq` |
+| 系統資訊 | `echo`, `which`, `date` |
+
+> \* `rm` 指令會自動將檔案移至 `.Trash` 目錄而非真正刪除
 
 ## API 參考
 
@@ -171,85 +199,44 @@ Found 3 skill(s):
 
 #### `NewCopilot() (*CopilotAgent, error)`
 
-建立新的 Copilot 客戶端實例，會自動載入或建立 token。
+建立新的 Copilot 客戶端實例。自動載入已儲存的 token，若不存在則觸發裝置碼登入流程。
 
-**回傳值：**
-- `*CopilotAgent`：Copilot 客戶端實例
-- `error`：錯誤訊息（若有）
+#### `(*CopilotAgent) Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error`
 
-#### `(*CopilotAgent) Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer) error`
-
-執行指定的 skill。
+執行指定的 skill。進入工具呼叫循環（最多 128 次迭代），每次迭代處理 API 回應中的工具呼叫請求。
 
 **參數：**
 - `ctx`：Context 實例
 - `skill`：要執行的 Skill 實例
 - `userInput`：使用者輸入的指令或提示
 - `output`：輸出寫入器（通常為 `os.Stdout`）
+- `allowAll`：設為 `true` 時跳過工具呼叫確認提示
 
-**回傳值：**
-- `error`：執行過程中的錯誤（若有）
+#### `(*CopilotAgent) Login(ctx context.Context) (*CopilotToken, error)`
 
-#### `CopilotLogin(ctx context.Context, tokenPath string) (*CopilotToken, error)`
-
-執行裝置碼登入流程。
-
-**參數：**
-- `ctx`：Context 實例
-- `tokenPath`：token 儲存路徑
-
-**回傳值：**
-- `*CopilotToken`：認證 token
-- `error`：錯誤訊息（若有）
+執行 GitHub Copilot 裝置碼登入流程。顯示驗證網址與使用者代碼，自動開啟瀏覽器，輪詢直到使用者完成授權或裝置碼過期。
 
 ### Skill Package (`internal/skill`)
 
 #### `NewScanner() *Scanner`
 
-建立新的 Skill 掃描器實例。
+建立新的 Skill 掃描器實例並立即執行掃描。以 Goroutine 併發掃描所有設定的路徑。
 
-**回傳值：**
-- `*Scanner`：掃描器實例
+#### `(*Scanner) List() []string`
 
-#### `(*Scanner) Scan() (*SkillList, error)`
-
-掃描所有可用的 skill。
-
-**回傳值：**
-- `*SkillList`：包含所有掃描到的 skill
-- `error`：錯誤訊息（若有）
-
-#### `(*SkillList) List() []string`
-
-取得所有 skill 名稱列表。
-
-**回傳值：**
-- `[]string`：skill 名稱陣列
+取得所有已掃描的 skill 名稱列表。
 
 ### Tools Package (`internal/tools`)
 
 #### `NewExecutor(workPath string) (*Executor, error)`
 
-建立新的工具執行器。
-
-**參數：**
-- `workPath`：工作目錄路徑
-
-**回傳值：**
-- `*Executor`：工具執行器實例
-- `error`：錯誤訊息（若有）
+建立新的工具執行器。從 embedded `tools.json` 載入工具定義，初始化指令白名單與目錄排除列表。
 
 #### `(*Executor) Execute(name string, args json.RawMessage) (string, error)`
 
-執行指定的工具。
+依工具名稱分派執行對應的工具函式。
 
-**參數：**
-- `name`：工具名稱（如 `bash`、`view`、`edit`、`create`）
-- `args`：JSON 格式的工具參數
-
-**回傳值：**
-- `string`：工具執行結果
-- `error`：錯誤訊息（若有）
+**支援的工具：** `read_file`、`list_files`、`glob_files`、`write_file`、`search_content`、`run_command`
 
 ### 資料結構
 
@@ -269,12 +256,12 @@ type CopilotToken struct {
 ```go
 type Skill struct {
     Name        string // skill 名稱
-    Description string // skill 描述
+    Description string // skill 描述（從 SKILL.md frontmatter 解析）
     AbsPath     string // 絕對路徑
-    Path        string // 相對路徑
+    Path        string // skill 資料夾路徑
     Content     string // 完整檔案內容
-    Body        string // skill 主體內容
-    Hash        string // 內容雜湊值
+    Body        string // frontmatter 之後的主體內容
+    Hash        string // SHA-256 內容雜湊值
 }
 ```
 
@@ -285,6 +272,18 @@ type SkillList struct {
     ByName map[string]*Skill // 以名稱索引的 skill
     ByPath map[string]*Skill // 以路徑索引的 skill
     Paths  []string          // 掃描的路徑列表
+}
+```
+
+#### `Executor`
+
+```go
+type Executor struct {
+    WorkPath       string          // 工作目錄
+    Allowed        []string        // 允許操作的資料夾
+    AllowedCommand map[string]bool // 允許執行的指令白名單
+    Exclude        []string        // 排除的目錄名稱
+    Tools          []Tool          // 工具定義列表
 }
 ```
 

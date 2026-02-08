@@ -8,7 +8,7 @@
 [![license](https://img.shields.io/github/license/pardnchiu/go-agent-skills)](LICENSE)
 [![version](https://img.shields.io/github/v/tag/pardnchiu/go-agent-skills?label=release)](https://github.com/pardnchiu/go-agent-skills/releases)
 
-> A lightweight Go CLI tool for executing skills with GitHub Copilot authentication integration
+> A lightweight Go CLI tool that executes AI skills via GitHub Copilot authentication with a complete filesystem toolchain
 
 ## Table of Contents
 
@@ -24,12 +24,13 @@
 
 ## Features
 
-- **GitHub Copilot Authentication**: Supports device code login flow and automatic token refresh mechanism
-- **Skill Scanning**: Automatically scans all available skills in the `.claude/skills` directory
-- **Skill Execution**: Executes skills via Copilot Chat API and handles tool invocation loops
-- **Tool Executor**: Built-in tool execution system with comprehensive tool support
-- **Token Management**: Automatically handles token expiration and renewal to maintain authentication state
-- **Command-Line Interface**: Provides `list` and `run` commands to manage and execute skills
+- **GitHub Copilot Authentication**: Device code login flow with automatic token refresh mechanism
+- **Multi-Directory Skill Scanning**: Automatically scans `.claude/skills`, `.skills`, `.opencode/skills`, `.openai/skills`, `.codex/skills`, and `/mnt/skills/*` for available skills
+- **Skill Execution Engine**: Executes skills via Copilot Chat API with up to 128 tool call iterations
+- **Complete Tool System**: Built-in `read_file`, `list_files`, `glob_files`, `write_file`, `search_content`, and `run_command` tools
+- **Safe Command Execution**: Command whitelist mechanism, `rm` automatically moves to `.Trash` instead of deleting, shell operator support
+- **Directory Exclusion**: Automatically excludes `.git`, `node_modules`, `vendor`, `dist`, and other directories
+- **Interactive Confirmation**: Prompts user before each tool call, supports `--allow` flag to skip confirmation
 
 ### Roadmap
 
@@ -40,39 +41,30 @@
 - [ ] Support OpenAI API key authentication
 - [ ] Support OpenAI device authentication
 
-**Skill Management:**
-- [x] Support list/run skills from multiple directories (`.claude/skills`, `.skills`, `.opencode/skills`, `.openai/skills`, `.codex/skills`, `/mnt/skills/*`)
-
-**Tool Implementation:**
-- [x] Implement `read_file(path)` - Read file content
-- [ ] Implement `list_files(path, recursive)` - List directory contents
-- [ ] Implement `glob_files(pattern)` - Find files by pattern
-- [ ] Implement `search_content(pattern, file_pattern)` - Search text in files
-- [ ] Implement `write_file(path, content)` - Write/create files
-- [ ] Implement `run_command(command)` - Execute shell commands (git, go, npm, python3, etc.)
-
 ## Architecture
 
 ```mermaid
 graph TB
     CLI[CLI Main] --> Scanner[Skill Scanner]
     CLI --> Copilot[Copilot Agent]
-    
+
     Scanner --> SkillList[Skill List]
     SkillList --> Parser[Skill Parser]
-    
+
     Copilot --> Login[Device Login]
     Copilot --> Refresh[Token Refresh]
     Copilot --> Exec[Skill Executor]
-    
+
     Exec --> API[Copilot Chat API]
     Exec --> ToolExec[Tool Executor]
-    
-    ToolExec --> Bash[bash]
-    ToolExec --> View[view]
-    ToolExec --> Edit[edit]
-    ToolExec --> Create[create]
-    
+
+    ToolExec --> ReadFile[read_file]
+    ToolExec --> ListFiles[list_files]
+    ToolExec --> GlobFiles[glob_files]
+    ToolExec --> WriteFile[write_file]
+    ToolExec --> SearchContent[search_content]
+    ToolExec --> RunCommand[run_command]
+
     style CLI fill:#e1f5ff
     style Copilot fill:#ffe1e1
     style Scanner fill:#e1ffe1
@@ -104,17 +96,18 @@ go install github.com/pardnchiu/go-agent-skills/cmd/cli@latest
 
 ### First-Time Authentication
 
-On first run, the GitHub Copilot device code login flow will be triggered automatically:
+On first run, the GitHub Copilot device code login flow triggers automatically:
 
 ```bash
 ./agent-skills
 ```
 
-The system will display:
+The system displays:
 1. User Code
 2. Verification URI
+3. Expiration time
 
-Open the verification URI in your browser and enter the user code to complete authentication.
+Press Enter to open the browser automatically, then enter the user code to complete authentication. The token is stored at `~/.config/go-agent-skills/copilot_token.json`.
 
 ### List All Available Skills
 
@@ -127,6 +120,10 @@ Example output:
 ```
 Found 3 skill(s):
 
+• commit-generate
+  Generate single-sentence commit message from git diff
+  Path: /Users/user/.claude/skills/commit-generate
+
 • readme-generate
   Generate bilingual README from source code analysis
   Path: /Users/user/.claude/skills/readme-generate
@@ -134,10 +131,6 @@ Found 3 skill(s):
 • version-generate
   Generate structured changelog and recommend new version from latest git tag to HEAD
   Path: /Users/user/.claude/skills/version-generate
-
-• commit-generate
-  Generate single-sentence commit message from git diff
-  Path: /Users/user/.claude/skills/commit-generate
 ```
 
 ### Execute a Skill
@@ -149,7 +142,11 @@ Found 3 skill(s):
 Example:
 
 ```bash
+# Interactive mode (confirm before each tool call)
 ./agent-skills run commit-generate "generate commit message from current changes"
+
+# Auto mode (skip confirmation)
+./agent-skills run readme-generate "generate readme" --allow
 ```
 
 ## CLI Reference
@@ -157,13 +154,44 @@ Example:
 | Command | Syntax | Description |
 |---------|--------|-------------|
 | `list` | `./agent-skills list` | List all installed skills |
-| `run` | `./agent-skills run <skill> <input>` | Execute the specified skill |
+| `run` | `./agent-skills run <skill> <input> [--allow]` | Execute the specified skill |
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--allow` | Skip interactive confirmation prompts for tool calls |
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `HOME` | - | Used to locate token storage path `~/.copilot/` |
+| `HOME` | - | Used to locate token storage path `~/.config/go-agent-skills/` |
+
+### Built-in Tools
+
+| Tool | Parameters | Description |
+|------|------------|-------------|
+| `read_file` | `path` | Read file content at the specified path |
+| `list_files` | `path`, `recursive` | List directory contents with optional recursive mode |
+| `glob_files` | `pattern` | Find files matching a glob pattern (e.g., `**/*.go`) |
+| `write_file` | `path`, `content` | Write or create a file |
+| `search_content` | `pattern`, `file_pattern` | Search file content using regex patterns |
+| `run_command` | `command` | Execute whitelisted shell commands |
+
+### Allowed Commands
+
+| Category | Commands |
+|----------|----------|
+| Version Control | `git` |
+| Languages & Package Managers | `go`, `node`, `npm`, `yarn`, `pnpm`, `python`, `python3`, `pip`, `pip3` |
+| File Operations | `ls`, `cat`, `head`, `tail`, `pwd`, `mkdir`, `touch`, `cp`, `mv`, `rm`* |
+| Text Processing | `grep`, `sed`, `awk`, `sort`, `uniq`, `diff`, `cut`, `tr`, `wc` |
+| Search | `find` |
+| Data Format | `jq` |
+| System Info | `echo`, `which`, `date` |
+
+> \* The `rm` command automatically moves files to a `.Trash` directory instead of permanently deleting them
 
 ## API Reference
 
@@ -171,85 +199,44 @@ Example:
 
 #### `NewCopilot() (*CopilotAgent, error)`
 
-Creates a new Copilot client instance, automatically loads or creates token.
+Create a new Copilot client instance. Automatically loads the stored token, or triggers the device code login flow if none exists.
 
-**Returns:**
-- `*CopilotAgent`: Copilot client instance
-- `error`: Error message if any
+#### `(*CopilotAgent) Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error`
 
-#### `(*CopilotAgent) Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer) error`
-
-Executes the specified skill.
+Execute the specified skill. Enters a tool call loop (up to 128 iterations), processing tool call requests from the API response in each iteration.
 
 **Parameters:**
 - `ctx`: Context instance
 - `skill`: Skill instance to execute
 - `userInput`: User input command or prompt
 - `output`: Output writer (typically `os.Stdout`)
+- `allowAll`: Set to `true` to skip tool call confirmation prompts
 
-**Returns:**
-- `error`: Error during execution if any
+#### `(*CopilotAgent) Login(ctx context.Context) (*CopilotToken, error)`
 
-#### `CopilotLogin(ctx context.Context, tokenPath string) (*CopilotToken, error)`
-
-Performs device code login flow.
-
-**Parameters:**
-- `ctx`: Context instance
-- `tokenPath`: Token storage path
-
-**Returns:**
-- `*CopilotToken`: Authentication token
-- `error`: Error message if any
+Perform the GitHub Copilot device code login flow. Displays the verification URI and user code, opens the browser automatically, and polls until the user completes authorization or the device code expires.
 
 ### Skill Package (`internal/skill`)
 
 #### `NewScanner() *Scanner`
 
-Creates a new skill scanner instance.
+Create a new skill scanner instance and immediately perform scanning. Scans all configured paths concurrently using goroutines.
 
-**Returns:**
-- `*Scanner`: Scanner instance
+#### `(*Scanner) List() []string`
 
-#### `(*Scanner) Scan() (*SkillList, error)`
-
-Scans all available skills.
-
-**Returns:**
-- `*SkillList`: Contains all scanned skills
-- `error`: Error message if any
-
-#### `(*SkillList) List() []string`
-
-Gets a list of all skill names.
-
-**Returns:**
-- `[]string`: Array of skill names
+Get a list of all scanned skill names.
 
 ### Tools Package (`internal/tools`)
 
 #### `NewExecutor(workPath string) (*Executor, error)`
 
-Creates a new tool executor.
-
-**Parameters:**
-- `workPath`: Working directory path
-
-**Returns:**
-- `*Executor`: Tool executor instance
-- `error`: Error message if any
+Create a new tool executor. Loads tool definitions from embedded `tools.json`, initializes the command whitelist and directory exclusion list.
 
 #### `(*Executor) Execute(name string, args json.RawMessage) (string, error)`
 
-Executes the specified tool.
+Dispatch execution to the corresponding tool function by name.
 
-**Parameters:**
-- `name`: Tool name (e.g., `bash`, `view`, `edit`, `create`)
-- `args`: Tool parameters in JSON format
-
-**Returns:**
-- `string`: Tool execution result
-- `error`: Error message if any
+**Supported tools:** `read_file`, `list_files`, `glob_files`, `write_file`, `search_content`, `run_command`
 
 ### Data Structures
 
@@ -269,12 +256,12 @@ type CopilotToken struct {
 ```go
 type Skill struct {
     Name        string // Skill name
-    Description string // Skill description
+    Description string // Skill description (parsed from SKILL.md frontmatter)
     AbsPath     string // Absolute path
-    Path        string // Relative path
+    Path        string // Skill folder path
     Content     string // Full file content
-    Body        string // Skill body content
-    Hash        string // Content hash
+    Body        string // Body content after frontmatter
+    Hash        string // SHA-256 content hash
 }
 ```
 
@@ -285,6 +272,18 @@ type SkillList struct {
     ByName map[string]*Skill // Skills indexed by name
     ByPath map[string]*Skill // Skills indexed by path
     Paths  []string          // List of scanned paths
+}
+```
+
+#### `Executor`
+
+```go
+type Executor struct {
+    WorkPath       string          // Working directory
+    Allowed        []string        // Allowed folders for operations
+    AllowedCommand map[string]bool // Command whitelist
+    Exclude        []string        // Excluded directory names
+    Tools          []Tool          // Tool definitions
 }
 ```
 

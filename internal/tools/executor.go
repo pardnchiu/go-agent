@@ -20,6 +20,7 @@ type ToolFunction struct {
 type Executor struct {
 	WorkPath string
 	Allowed  []string // limit to these folders to use
+	Exclude  []string
 	Tools    []Tool
 }
 
@@ -34,7 +35,10 @@ func NewExecutor(workPath string) (*Executor, error) {
 
 	return &Executor{
 		WorkPath: workPath,
-		Tools:    tools,
+		Exclude: []string{
+			".DS_Store", ".git", "node_modules", "vendor", ".vscode", ".idea", "dist", "build",
+		},
+		Tools: tools,
 	}, nil
 }
 
@@ -45,9 +49,39 @@ func (e *Executor) Execute(name string, args json.RawMessage) (string, error) {
 			Path string `json:"path"`
 		}
 		if err := json.Unmarshal(args, &params); err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to unmarshal json (%s): %w", name, err)
 		}
 		return e.readFile(params.Path)
+
+	case "list_files":
+		var params struct {
+			Path      string `json:"path"`
+			Recursive bool   `json:"recursive"`
+		}
+		if err := json.Unmarshal(args, &params); err != nil {
+			return "", fmt.Errorf("failed to unmarshal json (%s): %w", name, err)
+		}
+		return e.listFiles(params.Path, params.Recursive)
+
+	case "glob_files":
+		var params struct {
+			Pattern string `json:"pattern"`
+		}
+		if err := json.Unmarshal(args, &params); err != nil {
+			return "", fmt.Errorf("failed to unmarshal json (%s): %w", name, err)
+		}
+		return e.globFiles(params.Pattern)
+
+	case "write_file":
+		var params struct {
+			Path    string `json:"path"`
+			Content string `json:"content"`
+		}
+		if err := json.Unmarshal(args, &params); err != nil {
+			return "", fmt.Errorf("failed to unmarshal json (%s): %w", name, err)
+		}
+		return e.writeFile(params.Path, params.Content)
+
 	default:
 		return "", fmt.Errorf("unknown tool: %s", name)
 	}

@@ -151,13 +151,16 @@ func systemPrompt(workPath string, skill *skill.Skill) string {
 		content = strings.ReplaceAll(skill.Content, prefix, resolved)
 	}
 	return `你可以使用以下工具來與檔案系統互動：
+- read_file(path): 讀取檔案內容
+- list_files(path, recursive): 列出目錄內容
+- glob_files(pattern): 依模式尋找檔案
+- write_file(path, content): 寫入/建立檔案
 
- - read_file(path): 讀取檔案內容
+工作目錄：` + workPath + `
+技能目錄：` + skill.Path + `
 
- 工作目錄：` + workPath + `
- 技能目錄：` + skill.Path + `
-
- 關鍵：以下技能指令中的任何相對路徑都必須相對於技能目錄來解析。
+關鍵：以下技能指令中的任何相對路徑都必須相對於技能目錄來解析。
+重要：當被要求產生檔案時，你必須使用 write_file 工具將它們儲存到磁碟。
 
 ---
 

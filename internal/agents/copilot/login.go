@@ -17,13 +17,13 @@ import (
 )
 
 var (
-	DeviceCodeAPI       = "https://github.com/login/device/code"
-	OauthAccessTokenAPI = "https://github.com/login/oauth/access_token"
-	ClientID            = "Iv1.b507a08c87ecfe98" // TODO: will replace with personal client id
+	deviceCodeAPI       = "https://github.com/login/device/code"
+	oauthAccessTokenAPI = "https://github.com/login/oauth/access_token"
+	clientID            = "Iv1.b507a08c87ecfe98" // TODO: will replace with personal client id
 )
 
 var (
-	ErrAuthorizationPending = fmt.Errorf("authorization pending") // * pre declare error for ensuring padding wont cause login exit
+	errAuthorizationPending = fmt.Errorf("authorization pending") // * pre declare error for ensuring padding wont cause login exit
 )
 
 type DeviceCode struct {
@@ -35,10 +35,10 @@ type DeviceCode struct {
 }
 
 func (c *Agent) Login(ctx context.Context) (*Token, error) {
-	code, _, err := utils.POSTForm[DeviceCode](ctx, nil, DeviceCodeAPI,
+	code, _, err := utils.POSTForm[DeviceCode](ctx, nil, deviceCodeAPI,
 		map[string]string{},
 		url.Values{
-			"client_id": {ClientID},
+			"client_id": {clientID},
 		})
 
 	expires := time.Now().Add(time.Duration(code.ExpiresIn) * time.Second)
@@ -85,7 +85,7 @@ func (c *Agent) Login(ctx context.Context) (*Token, error) {
 		token, err = c.getAccessToken(ctx, client, code.DeviceCode)
 		if err != nil {
 			// * waiting for authorize
-			if errors.Is(err, ErrAuthorizationPending) {
+			if errors.Is(err, errAuthorizationPending) {
 				continue
 			}
 			return nil, err
@@ -103,10 +103,10 @@ type GopilotAccessToken struct {
 }
 
 func (c *Agent) getAccessToken(ctx context.Context, client *http.Client, deviceCode string) (*Token, error) {
-	accessToken, _, err := utils.POSTForm[GopilotAccessToken](ctx, client, OauthAccessTokenAPI,
+	accessToken, _, err := utils.POSTForm[GopilotAccessToken](ctx, client, oauthAccessTokenAPI,
 		map[string]string{},
 		url.Values{
-			"client_id":   {ClientID},
+			"client_id":   {clientID},
 			"device_code": {deviceCode},
 			"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
 		})
@@ -139,7 +139,7 @@ func (c *Agent) getAccessToken(ctx context.Context, client *http.Client, deviceC
 		return token, nil
 
 	case "authorization_pending":
-		return nil, ErrAuthorizationPending
+		return nil, errAuthorizationPending
 
 	default:
 		return nil, fmt.Errorf("failed to get access token: %s", accessToken.Error)

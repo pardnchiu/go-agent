@@ -8,15 +8,26 @@ import (
 	"slices"
 	"sort"
 
-	copilot "github.com/pardnchiu/go-agent-skills/internal/agents/copilot"
+	"github.com/manifoldco/promptui"
+	"github.com/pardnchiu/go-agent-skills/internal/agents"
+	"github.com/pardnchiu/go-agent-skills/internal/agents/copilot"
+	"github.com/pardnchiu/go-agent-skills/internal/agents/openai"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
+
+	"github.com/joho/godotenv"
 )
 
+func init() {
+	if err := godotenv.Load(); err != nil {
+		slog.Warn("No .env file found, relying on environment variables")
+	}
+}
+
 func main() {
-	client, err := copilot.New()
-	if err != nil {
-		slog.Error("failed to load Copilot token",
-			slog.String("error", err.Error()))
+	if len(os.Args) < 2 {
+		fmt.Println("Usage:")
+		fmt.Println("  go run cmd/cli/main.go list")
+		fmt.Println("  go run cmd/cli/main.go run <skill_name> <input> [--allow]")
 		os.Exit(1)
 	}
 
@@ -48,26 +59,16 @@ func main() {
 	}
 
 	if os.Args[1] == "run" {
-		if len(os.Args) < 3 {
-			fmt.Println("Usage: go run cmd/cli/main.go run <skill_name> <input>")
+		if len(os.Args) < 4 {
+			fmt.Println("Usage: go run cmd/cli/main.go run <skill_name> <input> [--allow]")
 			os.Exit(1)
 		}
 
 		skillName := os.Args[2]
 		userInput := os.Args[3]
-		allowAll := false
+		allowAll := slices.Contains(os.Args[4:], "--allow")
 
-		// Check for --allow flag
-		if slices.Contains(os.Args[4:], "--allow") {
-			allowAll = true
-		}
-
-		client, err := copilot.New()
-		if err != nil {
-			slog.Error("failed to load Copilot token", slog.String("error", err.Error()))
-			os.Exit(1)
-		}
-
+		agent := selectAgent()
 		scanner := skill.NewScanner()
 		targetSkill, ok := scanner.Skills.ByName[skillName]
 		if !ok {
@@ -76,48 +77,50 @@ func main() {
 		}
 
 		ctx := context.Background()
-		if err := client.Execute(ctx, targetSkill, userInput, os.Stdout, allowAll); err != nil {
+		if err := agent.Execute(ctx, targetSkill, userInput, os.Stdout, allowAll); err != nil {
 			slog.Error("failed to execute skill", slog.String("error", err.Error()))
 			os.Exit(1)
 		}
 		return
 	}
 
-	slog.Info("successfully loaded Copilot token",
-		slog.String("access_token", client.Token.AccessToken),
-		slog.String("token_type", client.Token.TokenType),
-		slog.String("scope", client.Token.Scope),
-		slog.Time("expires_at", client.Token.ExpiresAt))
+}
 
-	// if len(os.Args) < 3 || os.Args[1] != "input" {
-	// 	slog.Error("usage: go run cmd/cli/main.go input \"your message\"")
-	// 	os.Exit(1)
-	// }
+func selectAgent() agents.Agent {
+	prompt := promptui.Select{
+		Label: "Select Agent",
+		Items: []string{
+			"GitHub Copilot",
+			"OpenAI",
+		},
+		HideSelected: true,
+	}
 
-	// userInput := os.Args[2]
-	// ctx := context.Background()
-	// messages := []c.Message{
-	// 	{
-	// 		Role:    "system",
-	// 		Content: "You are a helpful assistant.",
-	// 	},
-	// 	{
-	// 		Role:    "user",
-	// 		Content: userInput,
-	// 	},
-	// }
+	idx, _, err := prompt.Run()
+	if err != nil {
+		slog.Error("agent selection failed", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
 
-	// resp, err := client.SendChat(ctx, messages, nil)
-	// if err != nil {
-	// 	slog.Error("failed to send chat",
-	// 		slog.String("error", err.Error()))
-	// 	os.Exit(1)
-	// }
+	switch idx {
+	case 0:
+		agent, err := copilot.New()
+		if err != nil {
+			slog.Error("failed to initialize Copilot", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		return agent
 
-	// if len(resp.Choices) > 0 {
-	// 	choice := resp.Choices[0]
-	// 	if content, ok := choice.Message.Content.(string); ok {
-	// 		fmt.Println("Response:", content)
-	// 	}
-	// }
+	case 1:
+		agent, err := openai.New()
+		if err != nil {
+			slog.Error("failed to initialize OpenAI", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		return agent
+
+	default:
+		os.Exit(1)
+		return nil
+	}
 }

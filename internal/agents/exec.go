@@ -50,25 +50,21 @@ type OpenAIOutput struct {
 }
 
 type Agent interface {
-	SendChat(ctx context.Context, messages []Message, toolDefs []tools.Tool) (*OpenAIOutput, error)
-	GetWorkDir() string
+	Send(ctx context.Context, messages []Message, toolDefs []tools.Tool) (*OpenAIOutput, error)
+	Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error
 }
 
-func Execute(ctx context.Context, agent Agent, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error {
-	// if err := c.checkExpires(ctx); err != nil {
-	// 	return err
-	// }
-
+func Execute(ctx context.Context, agent Agent, workDir string, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error {
 	if skill.Content == "" {
 		return fmt.Errorf("SKILL.md is empty: %s", skill.Path)
 	}
 
-	exec, err := tools.NewExecutor(agent.GetWorkDir())
+	exec, err := tools.NewExecutor(workDir)
 	if err != nil {
 		return fmt.Errorf("failed to create executor: %w", err)
 	}
 
-	systemPrompt := systemPrompt(agent.GetWorkDir(), skill)
+	systemPrompt := systemPrompt(workDir, skill)
 	messages := []Message{
 		{
 			Role:    "system",
@@ -81,7 +77,7 @@ func Execute(ctx context.Context, agent Agent, skill *skill.Skill, userInput str
 	}
 
 	for i := 0; i < MaxToolIterations; i++ {
-		resp, err := agent.SendChat(ctx, messages, exec.Tools)
+		resp, err := agent.Send(ctx, messages, exec.Tools)
 		if err != nil {
 			return err
 		}

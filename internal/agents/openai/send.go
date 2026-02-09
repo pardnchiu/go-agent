@@ -1,4 +1,4 @@
-package copilot
+package openai
 
 import (
 	"context"
@@ -12,21 +12,18 @@ import (
 )
 
 var (
-	defaultModel = "gpt-4.1"
-	chatAPI      = "https://api.githubcopilot.com/chat/completions"
+	defaultModel = "gpt-5-nano"
+	chatAPI      = "https://api.openai.com/v1/chat/completions"
 )
 
 func (a *Agent) Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error {
-	if err := a.checkExpires(ctx); err != nil {
-		return err
-	}
 	return agents.Execute(ctx, a, a.workDir, skill, userInput, output, allowAll)
 }
 
 func (a *Agent) Send(ctx context.Context, messages []agents.Message, toolDefs []tools.Tool) (*agents.OpenAIOutput, error) {
 	result, _, err := utils.POSTJson[agents.OpenAIOutput](ctx, a.httpClient, chatAPI, map[string]string{
-		"Authorization":  "Bearer " + a.Refresh.Token,
-		"Editor-Version": "vscode/1.95.0",
+		"Authorization": "Bearer " + a.apiKey,
+		"Content-Type":  "application/json",
 	}, map[string]any{
 		"model":    defaultModel,
 		"messages": messages,

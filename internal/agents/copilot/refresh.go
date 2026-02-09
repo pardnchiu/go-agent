@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	CopilotTokenAPI = "https://api.github.com/copilot_internal/v2/token"
+	copilotTokenAPI = "https://api.github.com/copilot_internal/v2/token"
 )
 
 type RefreshToken struct {
@@ -26,12 +26,10 @@ func (c *Agent) checkExpires(ctx context.Context) error {
 }
 
 func (c *Agent) refresh(ctx context.Context) error {
-	token, code, err := utils.GET[RefreshToken](ctx, nil, CopilotTokenAPI, map[string]string{
-		"Authorization":         "token " + c.Token.AccessToken,
-		"Accept":                "application/json",
-		"Editor-Version":        "vscode/1.95.0",
-		"Editor-Plugin-Version": "copilot/1.245.0",
-		"User-Agent":            "GitHubCopilotChat/0.22.0",
+	token, code, err := utils.GET[RefreshToken](ctx, nil, copilotTokenAPI, map[string]string{
+		"Authorization":  "token " + c.Token.AccessToken,
+		"Accept":         "application/json",
+		"Editor-Version": "vscode/1.95.0",
 	})
 	if code == http.StatusUnauthorized {
 		return fmt.Errorf("token expired, please login again")

@@ -10,7 +10,9 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pardnchiu/go-agent-skills/internal/agents"
+	"github.com/pardnchiu/go-agent-skills/internal/agents/claude"
 	"github.com/pardnchiu/go-agent-skills/internal/agents/copilot"
+	"github.com/pardnchiu/go-agent-skills/internal/agents/nvidia"
 	"github.com/pardnchiu/go-agent-skills/internal/agents/openai"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
 
@@ -92,6 +94,8 @@ func selectAgent() agents.Agent {
 		Items: []string{
 			"GitHub Copilot",
 			"OpenAI",
+			"Claude",
+			"Nvidia",
 		},
 		HideSelected: true,
 	}
@@ -115,6 +119,22 @@ func selectAgent() agents.Agent {
 		agent, err := openai.New()
 		if err != nil {
 			slog.Error("failed to initialize OpenAI", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		return agent
+
+	case 2:
+		agent, err := claude.New()
+		if err != nil {
+			slog.Error("failed to initialize Anthropic", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		return agent
+
+	case 3:
+		agent, err := nvidia.New()
+		if err != nil {
+			slog.Error("failed to initialize Anthropic", slog.String("error", err.Error()))
 			os.Exit(1)
 		}
 		return agent

@@ -18,7 +18,7 @@ var excludeFiles []byte
 func ListExcludes(root string) []model.Exclude {
 	var defaults []string
 	if err := json.Unmarshal(excludeFiles, &defaults); err != nil {
-		slog.Warn("failed to unmarshal exclude files",
+		slog.Warn("failed to unmarshal exclude files, using empty list",
 			slog.String("error", err.Error()))
 	}
 

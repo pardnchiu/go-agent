@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pardnchiu/go-agent-skills/internal/agents"
@@ -81,7 +83,9 @@ func main() {
 				// 明確指定 skill：run <skill_name> <input>
 				userInput := os.Args[3]
 				ctx := context.Background()
-				if err := agent.Execute(ctx, targetSkill, userInput, os.Stdout, allowAll); err != nil {
+				if err := runWithEvents(ctx, func(ch chan<- agents.Event) error {
+					return agent.Execute(ctx, targetSkill, userInput, ch, allowAll)
+				}); err != nil {
 					slog.Error("failed to execute skill", slog.String("error", err.Error()))
 					os.Exit(1)
 				}
@@ -92,7 +96,9 @@ func main() {
 		userInput := os.Args[2]
 		allowAll = slices.Contains(os.Args[3:], "--allow")
 		ctx := context.Background()
-		if err := agents.ExecuteAuto(ctx, agent, scanner, userInput, os.Stdout, allowAll); err != nil {
+		if err := runWithEvents(ctx, func(ch chan<- agents.Event) error {
+			return agents.ExecuteAuto(ctx, agent, scanner, userInput, ch, allowAll)
+		}); err != nil {
 			slog.Error("failed to execute", slog.String("error", err.Error()))
 			os.Exit(1)
 		}
@@ -113,6 +119,64 @@ func main() {
 		return
 	}
 
+}
+
+func runWithEvents(_ context.Context, fn func(chan<- agents.Event) error) error {
+	ch := make(chan agents.Event, 16)
+	var execErr error
+
+	go func() {
+		defer close(ch)
+		execErr = fn(ch)
+	}()
+
+	for ev := range ch {
+		switch ev.Type {
+		case agents.EventText:
+			fmt.Println(ev.Text)
+
+		case agents.EventToolCall:
+			fmt.Printf("[*] Tool: %s — \033[90m%s\033[0m\n", ev.ToolName, ev.ToolArgs)
+			var args map[string]any
+			if err := json.Unmarshal([]byte(ev.ToolArgs), &args); err == nil {
+				fmt.Printf("\033[90m──────────────────────────────────────────────────\n")
+				for k, v := range args {
+					fmt.Printf("- %s: %v\n", k, v)
+				}
+				fmt.Printf("──────────────────────────────────────────────────\033[0m\n")
+			}
+
+		case agents.EventToolConfirm:
+			prompt := promptui.Select{
+				Label: "Continue?",
+				Items: []string{"Yes", "Skip", "Stop"},
+				Size:  3, HideSelected: true,
+			}
+			idx, _, err := prompt.Run()
+			if err != nil || idx == 1 {
+				fmt.Printf("[x] User skipped\n")
+			} else if idx == 2 {
+				fmt.Printf("[x] User stopped\n")
+				return nil
+			}
+
+		case agents.EventToolResult:
+			if ev.ToolName == "write_file" {
+				fmt.Printf("\033[90m──────────────────────────────────────────────────\n")
+				fmt.Printf("%s\n", strings.TrimSpace(ev.Result))
+				fmt.Printf("──────────────────────────────────────────────────\033[0m\n")
+			}
+
+		case agents.EventError:
+			if ev.Err != nil {
+				fmt.Fprintf(os.Stderr, "[!] Error: %v\n", ev.Err)
+			}
+
+		case agents.EventDone:
+		}
+	}
+
+	return execErr
 }
 
 func selectAgent() agents.Agent {

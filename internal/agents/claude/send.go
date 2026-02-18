@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/pardnchiu/go-agent-skills/internal/agents"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
@@ -21,8 +20,8 @@ var (
 	maxTokens    = 4096
 )
 
-func (a *Agent) Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error {
-	return agents.Execute(ctx, a, a.workDir, skill, userInput, output, allowAll)
+func (a *Agent) Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- agents.Event, allowAll bool) error {
+	return agents.Execute(ctx, a, a.workDir, skill, userInput, events, allowAll)
 }
 
 func (a *Agent) Send(ctx context.Context, messages []agents.Message, tools []model.Tool) (*agents.OpenAIOutput, error) {

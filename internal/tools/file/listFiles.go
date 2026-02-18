@@ -16,21 +16,21 @@ func ListFiles(e *model.Executor, path string, recursive bool) (string, error) {
 	var files []string
 	var err error
 	if recursive {
-		files, err = listAll(e, fullPath)
+		files, err = walkFiles(e, fullPath)
 	} else {
-		files, err = list(e, fullPath)
+		files, err = listDir(e, fullPath)
 	}
 	if err != nil {
-		return "", fmt.Errorf("failed to load %s: %w", path, err)
+		return "", fmt.Errorf("list files — %w", err)
 	}
 	return strings.Join(files, "\n") + "\n", nil
 }
 
-func listAll(e *model.Executor, root string) ([]string, error) {
+func walkFiles(e *model.Executor, root string) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			slog.Warn("failed to access path",
+			slog.Warn("failed to access path, just skipping",
 				slog.String("error", err.Error()))
 			return nil
 		}
@@ -44,7 +44,7 @@ func listAll(e *model.Executor, root string) ([]string, error) {
 
 		rel, err := filepath.Rel(root, path)
 		if err != nil {
-			slog.Warn("failed to get relative path",
+			slog.Warn("failed to get relative path, just skipping",
 				slog.String("error", err.Error()))
 			return nil
 		}
@@ -63,15 +63,15 @@ func listAll(e *model.Executor, root string) ([]string, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("listAll — %w", err)
+		return nil, fmt.Errorf("walk files — %w", err)
 	}
 	return files, nil
 }
 
-func list(e *model.Executor, path string) ([]string, error) {
+func listDir(e *model.Executor, path string) ([]string, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load %s: %w", path, err)
+		return nil, fmt.Errorf("list directory — %w", err)
 	}
 
 	var files []string

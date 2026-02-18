@@ -5,13 +5,11 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/manifoldco/promptui"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
 	"github.com/pardnchiu/go-agent-skills/internal/tools"
 	"github.com/pardnchiu/go-agent-skills/internal/tools/model"
@@ -61,20 +59,20 @@ type OpenAIOutput struct {
 
 type Agent interface {
 	Send(ctx context.Context, messages []Message, toolDefs []model.Tool) (*OpenAIOutput, error)
-	Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error
+	Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- Event, allowAll bool) error
 }
 
-func ExecuteAuto(ctx context.Context, agent Agent, scanner *skill.Scanner, userInput string, output io.Writer, allowAll bool) error {
+func ExecuteAuto(ctx context.Context, agent Agent, scanner *skill.Scanner, userInput string, events chan<- Event, allowAll bool) error {
 	workDir, _ := os.Getwd()
 
 	matched := selectSkill(ctx, agent, scanner, userInput)
 	if matched != nil {
-		fmt.Fprintf(output, "[*] Auto-selected skill: %s\n", matched.Name)
-		return Execute(ctx, agent, workDir, matched, userInput, output, allowAll)
+		events <- Event{Type: EventText, Text: fmt.Sprintf("[*] Auto-selected skill: %s", matched.Name)}
+		return Execute(ctx, agent, workDir, matched, userInput, events, allowAll)
 	}
 
-	fmt.Fprintln(output, "[*] No matching skill found, using tools directly")
-	return Execute(ctx, agent, workDir, nil, userInput, output, allowAll)
+	events <- Event{Type: EventText, Text: "[*] No matching skill found, using tools directly"}
+	return Execute(ctx, agent, workDir, nil, userInput, events, allowAll)
 }
 
 func selectSkill(ctx context.Context, agent Agent, scanner *skill.Scanner, userInput string) *skill.Skill {
@@ -126,7 +124,7 @@ func selectSkill(ctx context.Context, agent Agent, scanner *skill.Scanner, userI
 	return nil
 }
 
-func Execute(ctx context.Context, agent Agent, workDir string, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error {
+func Execute(ctx context.Context, agent Agent, workDir string, skill *skill.Skill, userInput string, events chan<- Event, allowAll bool) error {
 	if skill != nil && skill.Content == "" {
 		return fmt.Errorf("SKILL.md is empty: %s", skill.Path)
 	}
@@ -168,44 +166,20 @@ func Execute(ctx context.Context, agent Agent, workDir string, skill *skill.Skil
 			messages = append(messages, choice.Message)
 
 			for _, e := range choice.Message.ToolCalls {
-				fmt.Printf("[*] Tool: %s — \033[90m%s\033[0m\n", e.Function.Name, e.Function.Arguments)
+				events <- Event{
+					Type:     EventToolCall,
+					ToolName: e.Function.Name,
+					ToolArgs: e.Function.Arguments,
+					ToolID:   e.ID,
+				}
 
 				if !allowAll {
-					var args map[string]any
-					if err := json.Unmarshal([]byte(e.Function.Arguments), &args); err == nil {
-						fmt.Printf("\033[90m──────────────────────────────────────────────────\n")
-						for k, v := range args {
-							fmt.Printf("- %s: %v\n", k, v)
-						}
-						fmt.Printf("──────────────────────────────────────────────────\033[0m\n")
-					} else {
-						fmt.Printf("\033[90m──────────────────────────────────────────────────\n")
-						fmt.Printf("- %s\n", e.Function.Arguments)
-						fmt.Printf("──────────────────────────────────────────────────\033[0m\n")
-					}
-					prompt := promptui.Select{
-						Label: "Continue?",
-						Items: []string{
-							"Yes",
-							"Skip",
-							"Stop",
-						},
-						Size:         3,
-						HideSelected: true,
-					}
 
-					idx, _, err := prompt.Run()
-					if err != nil || idx == 1 {
-						fmt.Printf("[x] User skipped\n")
-						messages = append(messages, Message{
-							Role:       "tool",
-							Content:    "User skipped",
-							ToolCallID: e.ID,
-						})
-						continue
-					} else if idx == 2 {
-						fmt.Printf("[x] User stopped\n")
-						return nil
+					events <- Event{
+						Type:     EventToolConfirm,
+						ToolName: e.Function.Name,
+						ToolArgs: e.Function.Arguments,
+						ToolID:   e.ID,
 					}
 				}
 
@@ -214,10 +188,11 @@ func Execute(ctx context.Context, agent Agent, workDir string, skill *skill.Skil
 					result = "Error: " + err.Error()
 				}
 
-				if e.Function.Name == "write_file" {
-					fmt.Printf("\033[90m──────────────────────────────────────────────────\n")
-					fmt.Printf("%s\n", strings.TrimSpace(result))
-					fmt.Printf("──────────────────────────────────────────────────\033[0m\n")
+				events <- Event{
+					Type:     EventToolResult,
+					ToolName: e.Function.Name,
+					ToolID:   e.ID,
+					Result:   result,
 				}
 
 				messages = append(messages, Message{
@@ -232,13 +207,14 @@ func Execute(ctx context.Context, agent Agent, workDir string, skill *skill.Skil
 		switch v := choice.Message.Content.(type) {
 		case string:
 			if v != "" {
-				output.Write([]byte(v))
-				output.Write([]byte("\n"))
+				events <- Event{Type: EventText, Text: v}
 			}
 		case nil:
 		default:
 			return fmt.Errorf("unexpected content type: %T", choice.Message.Content)
 		}
+
+		events <- Event{Type: EventDone}
 		return nil
 	}
 

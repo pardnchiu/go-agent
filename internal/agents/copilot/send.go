@@ -3,7 +3,6 @@ package copilot
 import (
 	"context"
 	"fmt"
-	"io"
 
 	"github.com/pardnchiu/go-agent-skills/internal/agents"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
@@ -19,11 +18,11 @@ var (
 	chatAPI      = "https://api.githubcopilot.com/chat/completions"
 )
 
-func (a *Agent) Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error {
+func (a *Agent) Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- agents.Event, allowAll bool) error {
 	if err := a.checkExpires(ctx); err != nil {
 		return err
 	}
-	return agents.Execute(ctx, a, a.workDir, skill, userInput, output, allowAll)
+	return agents.Execute(ctx, a, a.workDir, skill, userInput, events, allowAll)
 }
 
 func (a *Agent) Send(ctx context.Context, messages []agents.Message, tools []model.Tool) (*agents.OpenAIOutput, error) {

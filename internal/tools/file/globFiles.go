@@ -12,7 +12,7 @@ func GlobFiles(e *model.Executor, pattern string) (string, error) {
 	pattern = filepath.ToSlash(pattern)
 	patterns := strings.Split(pattern, "/")
 
-	files, err := listAll(e, e.WorkPath)
+	files, err := walkFiles(e, e.WorkPath)
 	if err != nil {
 		return "", err
 	}
@@ -26,7 +26,7 @@ func GlobFiles(e *model.Executor, pattern string) (string, error) {
 	}
 
 	if sb.Len() == 0 {
-		return fmt.Sprintf("No files found: %s", pattern), nil
+		return fmt.Sprintf("No files found in %s", pattern), nil
 	}
 	return sb.String(), nil
 }

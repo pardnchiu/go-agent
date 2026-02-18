@@ -15,9 +15,6 @@ var toolsMap []byte
 //go:embed embed/commands.json
 var allowCommand []byte
 
-//go:embed embed/exclude.json
-var excludeFiles []byte
-
 func NewExecutor(workPath string) (*model.Executor, error) {
 	var tools []model.Tool
 	if err := json.Unmarshal(toolsMap, &tools); err != nil {
@@ -34,15 +31,10 @@ func NewExecutor(workPath string) (*model.Executor, error) {
 		allowedCommand[cmd] = true
 	}
 
-	var files []string
-	if err := json.Unmarshal(excludeFiles, &files); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal exclude files: %w", err)
-	}
-
 	return &model.Executor{
 		WorkPath:       workPath,
 		AllowedCommand: allowedCommand,
-		Exclude:        files,
+		Exclude:        file.ListExcludes(workPath),
 		Tools:          tools,
 	}, nil
 }

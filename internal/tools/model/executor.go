@@ -6,8 +6,13 @@ type Executor struct {
 	WorkPath       string
 	Allowed        []string // limit to these folders to use
 	AllowedCommand map[string]bool
-	Exclude        []string
+	Exclude        []Exclude
 	Tools          []Tool
+}
+
+type Exclude struct {
+	File   string
+	Negate bool
 }
 
 type Tool struct {

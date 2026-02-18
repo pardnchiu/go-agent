@@ -2,79 +2,58 @@ package file
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/pardnchiu/go-agent-skills/internal/tools/model"
 )
 
-// * just fit one level of glob pattern
-// TODO: need to do more work to support complex glob patterns
 func GlobFiles(e *model.Executor, pattern string) (string, error) {
-	var result strings.Builder
-	err := filepath.WalkDir(e.WorkPath, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			slog.Warn("failed to access path",
-				slog.String("error", err.Error()))
-			return nil
-		}
+	pattern = filepath.ToSlash(pattern)
+	patterns := strings.Split(pattern, "/")
 
-		if isExclude(e, path) {
-			if d.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		if d.IsDir() && strings.HasPrefix(d.Name(), ".") && path != e.WorkPath {
-			return filepath.SkipDir
-		}
-
-		if d.IsDir() {
-			return nil
-		}
-
-		relPath, err := filepath.Rel(e.WorkPath, path)
-		if err != nil {
-			slog.Warn("failed to get relative path",
-				slog.String("error", err.Error()))
-			return nil
-		}
-
-		matched, err := filepath.Match(pattern, relPath)
-		if err != nil {
-			slog.Warn("failed to match pattern",
-				slog.String("error", err.Error()))
-			return nil
-		}
-		if matched {
-			result.WriteString(relPath + "\n")
-			return nil
-		}
-
-		if strings.Contains(pattern, "**") {
-			parts := strings.SplitN(pattern, "**", 2)
-			prefix := parts[0]
-			suffix := strings.TrimPrefix(parts[1], "/")
-			if strings.HasPrefix(relPath, prefix) {
-				rest := relPath[len(prefix):]
-				if suffix == "" {
-					result.WriteString(relPath + "\n")
-				} else if matched, _ := filepath.Match(suffix, filepath.Base(rest)); matched {
-					result.WriteString(relPath + "\n")
-				}
-			}
-		}
-		return nil
-	})
+	files, err := listAll(e, e.WorkPath)
 	if err != nil {
-		return "", fmt.Errorf("failed to walk directory (%s): %w", pattern, err)
+		return "", err
 	}
 
-	if result.Len() == 0 {
-		return fmt.Sprintf("No fils found: %s", pattern), nil
+	var sb strings.Builder
+	for _, file := range files {
+		parts := strings.Split(file, "/")
+		if matchFiles(patterns, parts) {
+			sb.WriteString(file + "\n")
+		}
 	}
-	return result.String(), nil
+
+	if sb.Len() == 0 {
+		return fmt.Sprintf("No files found: %s", pattern), nil
+	}
+	return sb.String(), nil
+}
+
+func matchFiles(patterns, parts []string) bool {
+	if len(patterns) == 0 {
+		return len(parts) == 0
+	}
+
+	pattern := patterns[0]
+	if pattern == "**" {
+		rest := patterns[1:]
+		for i := 0; i <= len(parts); i++ {
+			if matchFiles(rest, parts[i:]) {
+				return true
+			}
+		}
+		return false
+	}
+
+	if len(parts) == 0 {
+		return false
+	}
+
+	match, err := filepath.Match(pattern, parts[0])
+	if err != nil || !match {
+		return false
+	}
+	return matchFiles(patterns[1:], parts[1:])
 }

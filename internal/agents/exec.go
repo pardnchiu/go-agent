@@ -67,11 +67,11 @@ func ExecuteAuto(ctx context.Context, agent Agent, scanner *skill.Scanner, userI
 
 	matched := selectSkill(ctx, agent, scanner, userInput)
 	if matched != nil {
-		events <- Event{Type: EventText, Text: fmt.Sprintf("[*] Auto-selected skill: %s", matched.Name)}
+		events <- Event{Type: EventText, Text: fmt.Sprintf("Auto-selected skill: %s", matched.Name)}
 		return Execute(ctx, agent, workDir, matched, userInput, events, allowAll)
 	}
 
-	events <- Event{Type: EventText, Text: "[*] No matching skill found, using tools directly"}
+	events <- Event{Type: EventText, Text: "No matching skill found, using tools directly"}
 	return Execute(ctx, agent, workDir, nil, userInput, events, allowAll)
 }
 

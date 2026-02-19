@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -12,11 +11,11 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pardnchiu/go-agent-skills/internal/agents"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/claude"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/copilot"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/gemini"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/nvidia"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/openai"
+	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/claude"
+	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/copilot"
+	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/gemini"
+	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/nvidia"
+	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/openai"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
 
 	"github.com/joho/godotenv"
@@ -121,6 +120,16 @@ func main() {
 
 }
 
+func printTool(ev agents.Event) {
+	fmt.Printf("[*] Tool: %s — \033[90m%s\033[0m\n", ev.ToolName, ev.ToolArgs)
+}
+
+func printContent(ev agents.Event) {
+	fmt.Print("\033[90m──────────────────────────────────────────────────\n")
+	fmt.Printf("%s\n", strings.TrimSpace(ev.Result))
+	fmt.Print("──────────────────────────────────────────────────\033[0m\n")
+}
+
 func runWithEvents(_ context.Context, fn func(chan<- agents.Event) error) error {
 	ch := make(chan agents.Event, 16)
 	var execErr error
@@ -133,18 +142,10 @@ func runWithEvents(_ context.Context, fn func(chan<- agents.Event) error) error 
 	for ev := range ch {
 		switch ev.Type {
 		case agents.EventText:
-			fmt.Println(ev.Text)
+			fmt.Printf("[*] %s\n", ev.Text)
 
 		case agents.EventToolCall:
-			fmt.Printf("[*] Tool: %s — \033[90m%s\033[0m\n", ev.ToolName, ev.ToolArgs)
-			var args map[string]any
-			if err := json.Unmarshal([]byte(ev.ToolArgs), &args); err == nil {
-				fmt.Printf("\033[90m──────────────────────────────────────────────────\n")
-				for k, v := range args {
-					fmt.Printf("- %s: %v\n", k, v)
-				}
-				fmt.Printf("──────────────────────────────────────────────────\033[0m\n")
-			}
+			printTool(ev)
 
 		case agents.EventToolConfirm:
 			prompt := promptui.Select{
@@ -162,9 +163,7 @@ func runWithEvents(_ context.Context, fn func(chan<- agents.Event) error) error 
 
 		case agents.EventToolResult:
 			if ev.ToolName == "write_file" {
-				fmt.Printf("\033[90m──────────────────────────────────────────────────\n")
-				fmt.Printf("%s\n", strings.TrimSpace(ev.Result))
-				fmt.Printf("──────────────────────────────────────────────────\033[0m\n")
+				printContent(ev)
 			}
 
 		case agents.EventError:

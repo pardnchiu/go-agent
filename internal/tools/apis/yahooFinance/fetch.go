@@ -1,4 +1,4 @@
-package yahoofinance
+package yahooFinance
 
 import (
 	"context"
@@ -73,7 +73,6 @@ type tickerData struct {
 	FiftyTwoWeekLow      float64         `json:"fiftyTwoWeekLow"`
 	ChartPreviousClose   float64         `json:"chartPreviousClose"`
 	ChangePercent        float64         `json:"changePercent"`
-	LastUpdated          time.Time       `json:"lastUpdated"`
 	Candles              []candelBarData `json:"candles,omitempty"`
 }
 
@@ -209,7 +208,6 @@ func parse(raw []byte) (string, error) {
 		FiftyTwoWeekHigh:     meta.FiftyTwoWeekHigh,
 		FiftyTwoWeekLow:      meta.FiftyTwoWeekLow,
 		ChartPreviousClose:   meta.ChartPreviousClose,
-		LastUpdated:          time.Unix(meta.RegularMarketTime, 0),
 	}
 
 	if meta.ChartPreviousClose != 0 {
@@ -242,36 +240,10 @@ func parse(raw []byte) (string, error) {
 		}
 	}
 
-	return format(data), nil
-}
-
-func format(data *tickerData) string {
-	var sb strings.Builder
-
-	sign := "+"
-	if data.ChangePercent < 0 {
-		sign = ""
+	out, err := json.Marshal(data)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal: %w", err)
 	}
 
-	sb.WriteString(fmt.Sprintf("Symbol:     %s (%s)\n", data.Symbol, data.ExchangeName))
-	sb.WriteString(fmt.Sprintf("Price:      %.4f %s\n", data.RegularMarketPrice, data.Currency))
-	sb.WriteString(fmt.Sprintf("Day High:   %.4f\n", data.RegularMarketDayHigh))
-	sb.WriteString(fmt.Sprintf("Day Low:    %.4f\n", data.RegularMarketDayLow))
-	sb.WriteString(fmt.Sprintf("Day Range:  %.4f\n", data.RegularMarketDayHigh-data.RegularMarketDayLow))
-	sb.WriteString(fmt.Sprintf("52W High:   %.4f\n", data.FiftyTwoWeekHigh))
-	sb.WriteString(fmt.Sprintf("52W Low:    %.4f\n", data.FiftyTwoWeekLow))
-	sb.WriteString(fmt.Sprintf("52W Range:  %.4f\n", data.FiftyTwoWeekHigh-data.FiftyTwoWeekLow))
-	sb.WriteString(fmt.Sprintf("Volume:     %d\n", data.RegularMarketVolume))
-	sb.WriteString(fmt.Sprintf("Change:     %s%.2f%%\n", sign, data.ChangePercent))
-	sb.WriteString(fmt.Sprintf("Prev Close: %.4f\n", data.ChartPreviousClose))
-	sb.WriteString(fmt.Sprintf("Updated:    %s\n", data.LastUpdated.Format("2006-01-02 15:04:05 MST")))
-
-	if len(data.Candles) > 0 {
-		sb.WriteString(fmt.Sprintf("Candles:  %d bars\n", len(data.Candles)))
-		for _, c := range data.Candles {
-			sb.WriteString(fmt.Sprintf("  [%s] O:%.4f H:%.4f L:%.4f C:%.4f V:%d\n", c.Time.Format("15:04"), c.Open, c.High, c.Low, c.Close, c.Volume))
-		}
-	}
-
-	return sb.String()
+	return string(out), nil
 }

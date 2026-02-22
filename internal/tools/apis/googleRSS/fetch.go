@@ -2,6 +2,7 @@ package googleRSS
 
 import (
 	"context"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -27,14 +28,14 @@ type responseData struct {
 }
 
 type responseItemData struct {
-	Title       string `xml:"title"`
-	Link        string `xml:"link"`
-	Description string `xml:"description"`
-	PubDate     string `xml:"pubDate"`
+	Title       string `xml:"title"       json:"title"`
+	Link        string `xml:"link"        json:"link"`
+	Description string `xml:"description" json:"description"`
+	PubDate     string `xml:"pubDate"     json:"pub_date"`
 	Source      struct {
-		URL  string `xml:"url,attr"`
-		Name string `xml:",chardata"`
-	} `xml:"source"`
+		URL  string `xml:"url,attr"  json:"url"`
+		Name string `xml:",chardata" json:"name"`
+	} `xml:"source" json:"source"`
 }
 
 func Fetch(keyword, timeRange, language string) (string, error) {
@@ -115,7 +116,12 @@ func fetch(ctx context.Context, path string) (string, error) {
 	// * remove duplicates
 	items := deduplicate(root.Channel.Items)
 
-	return format(items), nil
+	out, err := json.Marshal(items)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal: %w", err)
+	}
+
+	return string(out), nil
 }
 
 func deduplicate(items []responseItemData) []responseItemData {
@@ -146,25 +152,4 @@ func hash(parts ...string) uint64 {
 		hash *= prime64
 	}
 	return hash
-}
-
-func format(items []responseItemData) string {
-	var sb strings.Builder
-	for i, item := range items {
-		sb.WriteString(fmt.Sprintf("%d. %s\n", i+1, item.Title))
-
-		if item.Source.URL != "" {
-			sb.WriteString(fmt.Sprintf("   來源網站: %s (%s)\n", item.Source.URL, item.Source.Name))
-		} else if item.Source.Name != "" {
-			sb.WriteString(fmt.Sprintf("   來源: %s\n", item.Source.Name))
-		}
-
-		if item.PubDate != "" {
-			sb.WriteString(fmt.Sprintf("   發布時間: %s\n", item.PubDate))
-		}
-
-		sb.WriteString(fmt.Sprintf("   Google News: %s\n\n", item.Link))
-	}
-
-	return sb.String()
 }

@@ -3,14 +3,13 @@ package googleRSS
 import (
 	"context"
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
-	"io"
-	"net/http"
 	"net/url"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/pardnchiu/go-agent-skills/internal/utils"
 )
 
 const (
@@ -70,7 +69,7 @@ func Fetch(keyword, timeRange, language string) (string, error) {
 		url.QueryEscape(language),
 	)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	items, err := fetch(ctx, requsetPath)
@@ -82,39 +81,17 @@ func Fetch(keyword, timeRange, language string) (string, error) {
 }
 
 func fetch(ctx context.Context, path string) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to build request: %w", err)
-	}
+	data, _, err := utils.GET[responseData](ctx, nil, path, map[string]string{
+		"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+		"Accept":     "application/xml",
+	})
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to fetch: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to read: %w", err)
-	}
-
-	var root responseData
-	if err := xml.Unmarshal(body, &root); err != nil {
-		return "", fmt.Errorf("failed to parse: %w", err)
-	}
-
-	if len(root.Channel.Items) == 0 {
+	if len(data.Channel.Items) == 0 {
 		return "", fmt.Errorf("no result")
 	}
 
 	// * remove duplicates
-	items := deduplicate(root.Channel.Items)
+	items := deduplicate(data.Channel.Items)
 
 	out, err := json.Marshal(items)
 	if err != nil {

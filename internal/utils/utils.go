@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -32,7 +33,14 @@ func GET[T any](ctx context.Context, client *http.Client, api string, header map
 
 	statusCode := resp.StatusCode
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	ct := resp.Header.Get("Content-Type")
+	switch {
+	case strings.Contains(ct, "xml"):
+		err = xml.NewDecoder(resp.Body).Decode(&result)
+	default:
+		err = json.NewDecoder(resp.Body).Decode(&result)
+	}
+	if err != nil {
 		return result, statusCode, err
 	}
 	return result, statusCode, nil

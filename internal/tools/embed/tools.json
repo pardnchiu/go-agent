@@ -194,7 +194,6 @@
       }
     }
   },
-
   {
     "type": "function",
     "function": {
@@ -234,6 +233,34 @@
           }
         },
         "required": ["url"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "fetch_weather",
+      "description": "取得指定城市（或目前 IP 位置）的即時天氣與預報，包含氣溫、體感溫度、濕度、風速、降雨機率等資訊。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "城市名稱（英文），例如 Taipei、Tokyo、London。留空則依 IP 自動定位"
+          },
+          "days": {
+            "type": "integer",
+            "description": "預報天數：-1=只回當前狀況不含預報、1=今天、2=今明兩天、3=三天（預設）",
+            "default": 3
+          },
+          "hourly_interval": {
+            "type": "string",
+            "description": "每幾小時一筆 hourly 資料，可選 1/2/3/6/8/12/24，預設 6（即每天 4 筆：0/6/12/18 時）",
+            "enum": ["1", "2", "3", "6", "8", "12", "24"],
+            "default": "6"
+          }
+        },
+        "required": []
       }
     }
   }

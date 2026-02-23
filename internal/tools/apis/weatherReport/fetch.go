@@ -51,10 +51,10 @@ type responseData struct {
 	} `json:"weather"`
 }
 
-type WeatherResult struct {
-	Location string        `json:"location"`
-	Current  CurrentData   `json:"current"`
-	Forecast []ForecastDay `json:"forecast"`
+type Data struct {
+	Location string         `json:"location"`
+	Current  CurrentData    `json:"current"`
+	Forecast []ForecastData `json:"forecast"`
 }
 
 type CurrentData struct {
@@ -68,7 +68,7 @@ type CurrentData struct {
 	Description  string `json:"description"`
 }
 
-type ForecastDay struct {
+type ForecastData struct {
 	Date     string       `json:"date"`
 	MaxTempC int          `json:"max_temp_c"`
 	MinTempC int          `json:"min_temp_c"`
@@ -120,7 +120,7 @@ func parse(data responseData, days, hourlyInterval int) (string, error) {
 
 	cur := data.CurrentCondition[0]
 
-	result := WeatherResult{}
+	result := Data{}
 
 	if len(data.NearestArea) > 0 {
 		area := data.NearestArea[0]
@@ -152,7 +152,7 @@ func parse(data responseData, days, hourlyInterval int) (string, error) {
 			if i >= days {
 				break
 			}
-			fd := ForecastDay{
+			fd := ForecastData{
 				Date:     day.Date,
 				MaxTempC: atoi(day.MaxTempC),
 				MinTempC: atoi(day.MinTempC),

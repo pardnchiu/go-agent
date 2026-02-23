@@ -263,5 +263,22 @@
         "required": []
       }
     }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "fetch_page",
+      "description": "使用 Chrome 瀏覽器開啟網頁，等待 JS 完整渲染後擷取內容，以 Markdown 格式返回。適合需要 JS 渲染的 SPA、動態頁面、或一般靜態頁面。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "要擷取內容的完整網址（需包含 https://）"
+          }
+        },
+        "required": ["url"]
+      }
+    }
   }
 ]

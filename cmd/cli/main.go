@@ -149,6 +149,12 @@ func printTool(ev atypes.Event) {
 		fmt.Printf("[*] Fetch Ticker — \033[34m%s (%s)\033[0m\n", args["symbol"], args["range"])
 	case "fetch_google_rss":
 		fmt.Printf("[*] Fetch News — \033[34m%s (%s)\033[0m\n", args["keyword"], args["time"])
+	case "fetch_page":
+		url := fmt.Sprintf("%v", args["url"])
+		if len(url) > 64 {
+			url = url[:61] + "..."
+		}
+		fmt.Printf("[*] Fetch Page — \033[34m%s\033[0m\n", url)
 	default:
 		fmt.Printf("[*] Tool: %s — \033[90m%s\033[0m\n", ev.ToolName, ev.ToolArgs)
 	}

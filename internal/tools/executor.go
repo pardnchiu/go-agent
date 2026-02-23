@@ -7,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/pardnchiu/go-agent-skills/internal/tools/apiAdapter"
+	"github.com/pardnchiu/go-agent-skills/internal/tools/apis/fetchPage"
 	"github.com/pardnchiu/go-agent-skills/internal/tools/apis/googleRSS"
 	"github.com/pardnchiu/go-agent-skills/internal/tools/apis/weatherReport"
 	"github.com/pardnchiu/go-agent-skills/internal/tools/apis/yahooFinance"
@@ -22,8 +22,6 @@ var toolsMap []byte
 
 //go:embed embed/commands.json
 var allowCommand []byte
-
-const cacheExpiry = 1 * time.Hour
 
 func NewExecutor(workPath string) (*types.Executor, error) {
 	var tools []types.Tool
@@ -196,6 +194,20 @@ func Execute(e *types.Executor, name string, args json.RawMessage) (string, erro
 		}
 		hourlyInterval, _ := params.HourlyInterval.Int64()
 		return weatherReport.Fetch(params.City, params.Days, int(hourlyInterval))
+
+	case "fetch_page":
+		var params struct {
+			URL string `json:"url"`
+		}
+		if err := json.Unmarshal(args, &params); err != nil {
+			return "", fmt.Errorf("failed to unmarshal json (%s): %w", name, err)
+		}
+
+		result, err := fetchPage.Load(params.URL)
+		if err != nil {
+			return "", err
+		}
+		return result, nil
 
 	default:
 		return "", fmt.Errorf("unknown tool: %s", name)

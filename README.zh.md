@@ -17,7 +17,6 @@
 - [功能特點](#功能特點)
 - [架構](#架構)
 - [檔案結構](#檔案結構)
-- [內建工具](#內建工具)
 - [授權](#授權)
 - [Author](#author)
 - [Stars](#stars)
@@ -36,7 +35,7 @@
 
 ### 安全工具執行器（rm 攔截 + 動態 API 擴展）
 
-內建 `rm` 命令攔截機制將誤刪檔案移至 `.Trash` 保護資料，搭配命令白名單嚴格限制可執行指令範圍。除 11 個內建工具（檔案操作、Yahoo Finance、Google News、天氣查詢、HTTP 請求）外，支援透過 JSON 設定檔動態擴展自訂 API 工具，無需修改原始碼。
+內建 `rm` 命令攔截機制將誤刪檔案移至 `.Trash` 保護資料，搭配命令白名單嚴格限制可執行指令範圍。除 14 個內建工具（檔案操作、Yahoo Finance、Google News、天氣查詢、HTTP 請求）外，支援透過 JSON 設定檔動態擴展自訂 API 工具，無需修改原始碼。
 
 ## 架構
 
@@ -71,27 +70,14 @@ go-agent-skills/
 │   ├── skill/                # Skill 掃描器與解析器
 │   ├── tools/                # 工具執行器
 │   │   ├── apis/            # Yahoo Finance、Google RSS、天氣
+│   │   │   └── searchWeb/   # 網路搜尋（Brave + DuckDuckGo）
 │   │   ├── apiAdapter/      # JSON 驅動的動態 API 載入器
+│   │   ├── browser/         # Chrome 無頭瀏覽器頁面擷取
+│   │   ├── calculator/      # 數學表達式計算器
 │   │   └── file/            # 檔案操作工具
 ├── go.mod
 └── README.md
 ```
-
-## 內建工具
-
-| 工具 | 說明 |
-|------|------|
-| `read_file` | 讀取指定路徑的檔案內容 |
-| `list_files` | 列出目錄內容（支援遞迴旗標） |
-| `glob_files` | 使用 glob 模式搜尋檔案（例如 `**/*.go`） |
-| `write_file` | 寫入或建立檔案（會覆蓋現有內容） |
-| `search_content` | 使用正規表達式搜尋檔案內容，支援檔案篩選 |
-| `patch_edit` | 精確字串替換，比全檔覆寫更安全 |
-| `run_command` | 執行白名單內的 shell 指令，含 `rm` 攔截機制 |
-| `fetch_yahoo_finance` | 透過 Yahoo Finance 取得股票報價與 K 線資料 |
-| `fetch_google_rss` | Google News RSS 搜尋，支援時間範圍與語言設定 |
-| `send_http_request` | 通用 HTTP 請求（GET/POST/PUT/DELETE/PATCH） |
-| `fetch_weather` | 透過 wttr.in 取得天氣預報與即時狀況 |
 
 ## 授權
 

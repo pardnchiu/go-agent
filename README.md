@@ -17,7 +17,6 @@
 - [Features](#features)
 - [Architecture](#architecture)
 - [File Structure](#file-structure)
-- [Built-in Tools](#built-in-tools)
 - [License](#license)
 - [Author](#author)
 - [Stars](#stars)
@@ -36,7 +35,7 @@ The LLM analyzes user input and automatically identifies the best matching Skill
 
 ### Safe Tool Executor with Dynamic API Extension
 
-Built-in `rm` interception moves files to `.Trash` instead of permanent deletion, paired with a strict command whitelist to limit shell exposure. Beyond the 11 built-in tools (file operations, Yahoo Finance, Google News, weather, HTTP), custom API tools can be added dynamically via JSON config files — no source code modification required.
+Built-in `rm` interception moves files to `.Trash` instead of permanent deletion, paired with a strict command whitelist to limit shell exposure. Beyond the 14 built-in tools (file operations, Yahoo Finance, Google News, weather, HTTP), custom API tools can be added dynamically via JSON config files — no source code modification required.
 
 ## Architecture
 
@@ -71,27 +70,14 @@ go-agent-skills/
 │   ├── skill/                # Skill scanner & parser
 │   ├── tools/                # Tool executor
 │   │   ├── apis/            # Yahoo Finance, Google RSS, Weather
+│   │   │   └── searchWeb/   # Web search (Brave + DuckDuckGo)
 │   │   ├── apiAdapter/      # JSON-driven dynamic API loader
+│   │   ├── browser/         # Headless Chrome page fetch
+│   │   ├── calculator/      # Math expression evaluator
 │   │   └── file/            # File operation tools
 ├── go.mod
 └── README.md
 ```
-
-## Built-in Tools
-
-| Tool | Description |
-|------|-------------|
-| `read_file` | Read file content at specified path |
-| `list_files` | List directory contents (supports recursive flag) |
-| `glob_files` | Search files using glob pattern (e.g., `**/*.go`) |
-| `write_file` | Write or create a file (overwrites existing content) |
-| `search_content` | Search file content using regex with optional file filter |
-| `patch_edit` | Precise string replacement — safer than full file rewrite |
-| `run_command` | Execute whitelisted shell commands with `rm` interception |
-| `fetch_yahoo_finance` | Stock quotes and candlestick data via Yahoo Finance |
-| `fetch_google_rss` | Google News RSS search with time range and locale |
-| `send_http_request` | Generic HTTP request (GET/POST/PUT/DELETE/PATCH) |
-| `fetch_weather` | Weather forecast and current conditions via wttr.in |
 
 ## License
 

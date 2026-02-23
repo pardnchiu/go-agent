@@ -43,6 +43,8 @@ cp .env.example .env
 | `ANTHROPIC_API_KEY` | No | Anthropic Claude API key |
 | `GEMINI_API_KEY` | No | Google Gemini API key |
 | `NVIDIA_API_KEY` | No | Nvidia API key |
+| `BRAVE_API_KEY` | No | Brave Search API key (used by `search_web`); falls back to DuckDuckGo if not set |
+| `BRAVE_QUOTA_FALLBACK` | No | Set to `1` to fall back to DuckDuckGo when monthly Brave quota (1,000 requests) is exhausted; default `0` returns an error on quota exceeded |
 
 **Note:** GitHub Copilot uses Device Code authentication flow and does not require environment variables.
 
@@ -181,6 +183,9 @@ All Agents share the following tool collection:
 | `fetch_google_rss` | `keyword`, `time`, `lang?` | Google News RSS search; time: `1h`/`3h`/`6h`/`12h`/`24h`/`7d` |
 | `send_http_request` | `url`, `method?`, `headers?`, `body?`, `content_type?`, `timeout?` | Generic HTTP request; method defaults to `GET`, timeout up to 300s |
 | `fetch_weather` | `city?`, `days?`, `hourly_interval?` | Weather forecast via wttr.in; `days=-1` for current only, default 3-day forecast |
+| `fetch_page` | `url` | Open URL in headless Chrome, wait for full JS render, return content as Markdown |
+| `search_web` | `query`, `range?`, `limit?` | Web search via Brave Search + DuckDuckGo fallback; `range`: `1h`/`3h`/`6h`/`12h`/`1d`/`7d`/`1m`/`1y`; `limit` max 50 |
+| `calculate` | `expression` | Evaluate math expression; supports `+`, `-`, `*`, `/`, `%`, `^` (power), `()`, and functions: `sqrt`, `abs`, `pow(base,exp)`, `ceil`, `floor`, `round`, `log`, `log2`, `log10`, `sin`, `cos`, `tan` |
 
 #### run_command Safety Mechanisms
 
@@ -210,6 +215,58 @@ The following commands are not whitelisted and will be rejected:
 - `dd`, `mkfs`
 - Any non-whitelisted binaries
 
+#### search_web API Key Configuration
+
+`search_web` queries both Brave Search and DuckDuckGo concurrently when `BRAVE_API_KEY` is set, then merges and deduplicates results. Without the key, only DuckDuckGo is used.
+
+Brave Search free plan allows **1,000 requests per month**. Usage is tracked locally at `~/.config/go-agent-skills/brave_quota.json`.
+
+| Variable | Effect |
+|----------|--------|
+| `BRAVE_API_KEY` unset | DuckDuckGo only |
+| `BRAVE_API_KEY` set, quota not exceeded | Brave + DuckDuckGo concurrent |
+| `BRAVE_API_KEY` set, quota exceeded, `BRAVE_QUOTA_FALLBACK=0` (default) | Error returned |
+| `BRAVE_API_KEY` set, quota exceeded, `BRAVE_QUOTA_FALLBACK=1` | Falls back to DuckDuckGo |
+
+#### Dynamic API Tool Extension (api.json)
+
+Place JSON files under `.config/apis/` in the project directory or `~/.config/go-agent-skills/apis/` for global scope. Each file defines one custom API tool, automatically prefixed with `api_` and loaded at startup.
+
+**File format** (see `internal/tools/apiAdapter/example.json`):
+
+```json
+{
+  "name": "tool_name",
+  "description": "What this tool does",
+  "endpoint": {
+    "url": "https://your.api/{id}/resource",
+    "method": "GET",
+    "content_type": "json",
+    "headers": { "X-Custom-Header": "value" },
+    "query": { "static_param": "value" },
+    "timeout": 15
+  },
+  "auth": {
+    "type": "bearer",
+    "header": "Authorization",
+    "env": "YOUR_API_KEY_ENV"
+  },
+  "parameters": {
+    "id": {
+      "type": "string",
+      "description": "Resource ID mapped to {id} in the URL",
+      "required": true,
+      "default": ""
+    }
+  },
+  "response": {
+    "format": "json"
+  }
+}
+```
+
+> **Gemini compatibility:** Gemini does not support `integer` as a parameter `type` in tool definitions. Use `"type": "string"` with an `enum` of string values (e.g., `["1", "2", "6"]`) for numeric enum fields. The executor handles string-to-integer conversion internally.
+
 ## API Reference
 
 ### Agent Interface
@@ -219,7 +276,7 @@ All Agent implementations must implement the following interface:
 ```go
 type Agent interface {
     Send(ctx context.Context, messages []Message, toolDefs []tools.Tool) (*OpenAIOutput, error)
-    Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error
+    Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- atypes.Event, allowAll bool) error
 }
 ```
 
@@ -243,7 +300,7 @@ Handles a single LLM API call, passing conversation history and tool definitions
 #### Execute
 
 ```go
-Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error
+Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- atypes.Event, allowAll bool) error
 ```
 
 Manages complete Skill execution loop, handling up to 32 tool call iterations. When `skill` is `nil`, uses base system prompt for direct tool execution.
@@ -252,7 +309,7 @@ Manages complete Skill execution loop, handling up to 32 tool call iterations. W
 - `ctx`: Execution context
 - `skill`: Skill to execute (`nil` for direct tool mode)
 - `userInput`: User's task description
-- `output`: Output stream (typically `os.Stdout`)
+- `events`: Event channel for receiving tool call requests, confirmation prompts, and execution results
 - `allowAll`: Whether to skip interactive confirmations
 
 **Returns:**
@@ -374,8 +431,8 @@ package main
 
 import (
     "context"
-    "os"
 
+    atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
     "github.com/pardnchiu/go-agent-skills/internal/agents/openai"
     "github.com/pardnchiu/go-agent-skills/internal/skill"
 )
@@ -388,9 +445,18 @@ func main() {
     scanner := skill.NewScanner()
     targetSkill := scanner.Skills.ByName["commit-generate"]
 
+    // Create event channel and consume events
+    events := make(chan atypes.Event, 64)
+    go func() {
+        for event := range events {
+            // Handle tool call requests, confirmations, and results
+            _ = event
+        }
+    }()
+
     // Execute Skill
     ctx := context.Background()
-    agent.Execute(ctx, targetSkill, "generate commit message", os.Stdout, false)
+    agent.Execute(ctx, targetSkill, "generate commit message", events, false)
 }
 ```
 

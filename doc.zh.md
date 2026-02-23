@@ -43,6 +43,8 @@ cp .env.example .env
 | `ANTHROPIC_API_KEY` | 否 | Anthropic Claude API 金鑰 |
 | `GEMINI_API_KEY` | 否 | Google Gemini API 金鑰 |
 | `NVIDIA_API_KEY` | 否 | Nvidia API 金鑰 |
+| `BRAVE_API_KEY` | 否 | Brave Search API 金鑰（供 `search_web` 使用）；未設定時退回 DuckDuckGo |
+| `BRAVE_QUOTA_FALLBACK` | 否 | 設為 `1` 時，每月 Brave 配額（1,000 次）用盡後自動退回 DuckDuckGo；預設 `0` 則在配額耗盡時回傳錯誤 |
 
 **注意：** GitHub Copilot 使用 Device Code 登入流程，不需要環境變數。
 
@@ -181,6 +183,9 @@ Token 會在過期前自動更新，無需手動管理。
 | `fetch_google_rss` | `keyword`, `time`, `lang?` | Google News RSS 搜尋；time: `1h`/`3h`/`6h`/`12h`/`24h`/`7d` |
 | `send_http_request` | `url`, `method?`, `headers?`, `body?`, `content_type?`, `timeout?` | 通用 HTTP 請求；method 預設 `GET`，timeout 最大 300 秒 |
 | `fetch_weather` | `city?`, `days?`, `hourly_interval?` | 透過 wttr.in 取得天氣預報；`days=-1` 僅回當前狀況，預設三天預報 |
+| `fetch_page` | `url` | 以 Chrome 無頭瀏覽器開啟網址，等待 JS 完整渲染後以 Markdown 格式返回頁面內容 |
+| `search_web` | `query`, `range?`, `limit?` | 透過 Brave Search + DuckDuckGo 搜尋網路；`range`: `1h`/`3h`/`6h`/`12h`/`1d`/`7d`/`1m`/`1y`；`limit` 最大 50 |
+| `calculate` | `expression` | 計算數學表達式；支援 `+`、`-`、`*`、`/`、`%`、`^`（冪次）、`()` 及函式：`sqrt`、`abs`、`pow(base,exp)`、`ceil`、`floor`、`round`、`log`、`log2`、`log10`、`sin`、`cos`、`tan` |
 
 #### run_command 安全機制
 
@@ -210,6 +215,58 @@ awk, ls, pwd, echo, date, wc, head, tail, sort, uniq
 - `dd`、`mkfs`
 - 任何非白名單的二進位檔案
 
+#### search_web API Key 設定
+
+設定 `BRAVE_API_KEY` 後，`search_web` 會同時查詢 Brave Search 與 DuckDuckGo，並合併去重後回傳結果。未設定時僅使用 DuckDuckGo。
+
+Brave Search 免費方案每月限制 **1,000 次請求**，使用量會記錄於本地 `~/.config/go-agent-skills/brave_quota.json`。
+
+| 情境 | 行為 |
+|------|------|
+| 未設定 `BRAVE_API_KEY` | 僅使用 DuckDuckGo |
+| 設定 `BRAVE_API_KEY`，配額未耗盡 | Brave + DuckDuckGo 並行 |
+| 設定 `BRAVE_API_KEY`，配額耗盡，`BRAVE_QUOTA_FALLBACK=0`（預設） | 回傳錯誤 |
+| 設定 `BRAVE_API_KEY`，配額耗盡，`BRAVE_QUOTA_FALLBACK=1` | 退回 DuckDuckGo |
+
+#### 動態 API 工具擴展（api.json）
+
+在專案目錄的 `.config/apis/` 或全域路徑 `~/.config/go-agent-skills/apis/` 下放置 JSON 檔案，每個檔案定義一個自訂 API 工具，啟動時自動以 `api_` 前綴載入。
+
+**檔案格式**（參考 `internal/tools/apiAdapter/example.json`）：
+
+```json
+{
+  "name": "tool_name",
+  "description": "此工具的功能描述",
+  "endpoint": {
+    "url": "https://your.api/{id}/resource",
+    "method": "GET",
+    "content_type": "json",
+    "headers": { "X-Custom-Header": "value" },
+    "query": { "static_param": "value" },
+    "timeout": 15
+  },
+  "auth": {
+    "type": "bearer",
+    "header": "Authorization",
+    "env": "YOUR_API_KEY_ENV"
+  },
+  "parameters": {
+    "id": {
+      "type": "string",
+      "description": "資源 ID，對應 URL 中的 {id}",
+      "required": true,
+      "default": ""
+    }
+  },
+  "response": {
+    "format": "json"
+  }
+}
+```
+
+> **Gemini 相容性注意：** Gemini 不支援工具定義中參數的 `"type": "integer"`。數字型 enum 欄位應改用 `"type": "string"` 搭配字串 enum（例如 `["1", "2", "6"]`），執行器內部會自動處理字串轉整數。
+
 ## API 參考
 
 ### Agent Interface
@@ -219,7 +276,7 @@ awk, ls, pwd, echo, date, wc, head, tail, sort, uniq
 ```go
 type Agent interface {
     Send(ctx context.Context, messages []Message, toolDefs []tools.Tool) (*OpenAIOutput, error)
-    Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error
+    Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- atypes.Event, allowAll bool) error
 }
 ```
 
@@ -243,7 +300,7 @@ Send(ctx context.Context, messages []Message, toolDefs []tools.Tool) (*OpenAIOut
 #### Execute
 
 ```go
-Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Writer, allowAll bool) error
+Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- atypes.Event, allowAll bool) error
 ```
 
 管理完整的 Skill 執行迴圈，處理最多 32 次工具呼叫迭代。當 `skill` 為 `nil` 時，使用基礎系統提示詞直接執行工具。
@@ -252,7 +309,7 @@ Execute(ctx context.Context, skill *skill.Skill, userInput string, output io.Wri
 - `ctx`：執行上下文
 - `skill`：要執行的 Skill（`nil` 代表直接工具模式）
 - `userInput`：使用者輸入的任務描述
-- `output`：輸出串流（通常為 `os.Stdout`）
+- `events`：事件 Channel，用於接收工具呼叫請求、確認提示與執行結果事件
 - `allowAll`：是否跳過互動式確認
 
 **回傳：**
@@ -374,8 +431,8 @@ package main
 
 import (
     "context"
-    "os"
 
+    atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
     "github.com/pardnchiu/go-agent-skills/internal/agents/openai"
     "github.com/pardnchiu/go-agent-skills/internal/skill"
 )
@@ -388,9 +445,18 @@ func main() {
     scanner := skill.NewScanner()
     targetSkill := scanner.Skills.ByName["commit-generate"]
 
+    // 建立事件 Channel 並消費事件
+    events := make(chan atypes.Event, 64)
+    go func() {
+        for event := range events {
+            // 處理工具呼叫請求、確認提示與執行結果
+            _ = event
+        }
+    }()
+
     // 執行 Skill
     ctx := context.Background()
-    agent.Execute(ctx, targetSkill, "generate commit message", os.Stdout, false)
+    agent.Execute(ctx, targetSkill, "generate commit message", events, false)
 }
 ```
 

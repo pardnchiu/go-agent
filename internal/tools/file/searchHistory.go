@@ -49,7 +49,8 @@ func searchHistory(sessionID, keyword string, limit int) (string, error) {
 	lower := strings.ToLower(keyword)
 	var matches []historyEntry
 
-	for i := len(entries) - 1; i >= 0; i-- {
+	// 排除最新的 4 筆紀錄（always include）
+	for i := len(entries) - 5; i >= 0; i-- {
 		entry := entries[i]
 		if strings.Contains(strings.ToLower(entry.Content), lower) {
 			matches = append(matches, entry)

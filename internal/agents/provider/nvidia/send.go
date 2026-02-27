@@ -24,7 +24,7 @@ func (a *Agent) Send(ctx context.Context, messages []atypes.Message, tools []tty
 		"Authorization": "Bearer " + a.apiKey,
 		"Content-Type":  "application/json",
 	}, map[string]any{
-		"model":    defaultModel,
+		"model":    a.model,
 		"messages": messages,
 		"tools":    tools,
 	}, "json")

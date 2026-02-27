@@ -43,7 +43,7 @@ func (a *Agent) Send(ctx context.Context, messages []atypes.Message, tools []tty
 		"anthropic-version": "2023-06-01",
 		"Content-Type":      "application/json",
 	}, map[string]any{
-		"model":      defaultModel,
+		"model":      a.model,
 		"max_tokens": maxTokens,
 		"system":     systemPrompt,
 		"messages":   newMessages,

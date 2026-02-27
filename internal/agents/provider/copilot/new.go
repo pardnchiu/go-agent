@@ -23,6 +23,7 @@ type Token struct {
 
 type Agent struct {
 	httpClient *http.Client
+	model      string
 	Token      *Token
 	Refresh    *RefreshToken
 	workDir    string
@@ -39,8 +40,9 @@ var (
 )
 
 func New(model ...string) (*Agent, error) {
+	usedModel := defaultModel
 	if len(model) > 0 && strings.HasPrefix(model[0], prefix) {
-		defaultModel = strings.TrimPrefix(model[0], prefix)
+		usedModel = strings.TrimPrefix(model[0], prefix)
 	}
 
 	workDir, err := os.Getwd()
@@ -55,6 +57,7 @@ func New(model ...string) (*Agent, error) {
 
 	agent := &Agent{
 		httpClient: &http.Client{},
+		model:      usedModel,
 		workDir:    workDir,
 		tokenDir:   filepath.Join(configDir.Home, "copilot_token.json"),
 	}

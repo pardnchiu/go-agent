@@ -28,7 +28,7 @@ func (a *Agent) Send(ctx context.Context, messages []atypes.Message, tools []tty
 		"Authorization":  "Bearer " + a.Refresh.Token,
 		"Editor-Version": "vscode/1.95.0",
 	}, map[string]any{
-		"model":    defaultModel,
+		"model":    a.model,
 		"messages": messages,
 		"tools":    tools,
 	}, "json")

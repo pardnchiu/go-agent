@@ -37,7 +37,7 @@ func (a *Agent) Send(ctx context.Context, messages []atypes.Message, tools []tty
 	}
 
 	newTools := a.convertToTools(tools)
-	apiURL := fmt.Sprintf("%s%s:generateContent?key=%s", baseAPI, defaultModel, a.apiKey)
+	apiURL := fmt.Sprintf("%s%s:generateContent?key=%s", baseAPI, a.model, a.apiKey)
 	requestBody := a.generateRequestBody(newMessages, systemPrompt, newTools)
 
 	result, _, err := utils.POST[Output](ctx, a.httpClient, apiURL, map[string]string{

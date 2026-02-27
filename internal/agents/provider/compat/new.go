@@ -9,6 +9,7 @@ import (
 
 type Agent struct {
 	httpClient *http.Client
+	model      string
 	baseURL    string
 	apiKey     string
 	workDir    string
@@ -20,8 +21,9 @@ var (
 )
 
 func New(model ...string) (*Agent, error) {
+	usedModel := defaultModel
 	if len(model) > 0 && strings.HasPrefix(model[0], prefix) {
-		defaultModel = strings.TrimPrefix(model[0], prefix)
+		usedModel = strings.TrimPrefix(model[0], prefix)
 	}
 
 	baseURL := os.Getenv("COMPAT_URL")
@@ -39,6 +41,7 @@ func New(model ...string) (*Agent, error) {
 
 	return &Agent{
 		httpClient: &http.Client{},
+		model:      usedModel,
 		baseURL:    baseURL,
 		apiKey:     apiKey,
 		workDir:    workDir,

@@ -9,6 +9,7 @@ import (
 
 type Agent struct {
 	httpClient *http.Client
+	model      string
 	apiKey     string
 	workDir    string
 }
@@ -21,8 +22,9 @@ var (
 )
 
 func New(model ...string) (*Agent, error) {
+	usedModel := defaultModel
 	if len(model) > 0 && strings.HasPrefix(model[0], prefix) {
-		defaultModel = strings.TrimPrefix(model[0], prefix)
+		usedModel = strings.TrimPrefix(model[0], prefix)
 	}
 
 	apiKey := os.Getenv("GEMINI_API_KEY")
@@ -34,6 +36,7 @@ func New(model ...string) (*Agent, error) {
 
 	return &Agent{
 		httpClient: &http.Client{},
+		model:      usedModel,
 		apiKey:     apiKey,
 		workDir:    workDir,
 	}, nil

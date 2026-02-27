@@ -4,22 +4,17 @@
 
 ## 前置需求
 
-- Go 1.25.1 或更高版本
-- 至少一組 AI Agent 憑證（GitHub Copilot 訂閱或以下任一 API Key）：
-  - `OPENAI_API_KEY`
-  - `ANTHROPIC_API_KEY`
-  - `GEMINI_API_KEY`
-  - `NVIDIA_API_KEY`
+- Go 1.20 或更高版本
+- 至少一組 AI Agent 憑證（以下擇一）：
+  - GitHub Copilot 訂閱（Device Code 互動登入）
+  - `OPENAI_API_KEY`（OpenAI）
+  - `ANTHROPIC_API_KEY`（Claude）
+  - `GEMINI_API_KEY`（Gemini）
+  - `NVIDIA_API_KEY`（NVIDIA NIM）
+  - 本地 Ollama 或其他 OpenAI 相容服務（compat provider，無需 API Key）
+- Chrome 瀏覽器（`fetch_page` 工具使用 go-rod 驅動，首次執行會自動下載）
 
 ## 安裝
-
-### 從原始碼建置
-
-```bash
-git clone https://github.com/pardnchiu/go-agent-skills.git
-cd go-agent-skills
-go build -o agent-skills cmd/cli/main.go
-```
 
 ### 使用 go install
 
@@ -27,237 +22,115 @@ go build -o agent-skills cmd/cli/main.go
 go install github.com/pardnchiu/go-agent-skills/cmd/cli@latest
 ```
 
+### 從原始碼建置
+
+```bash
+git clone https://github.com/pardnchiu/go-agent-skills.git
+cd go-agent-skills
+go build -o agent-skills ./cmd/cli
+```
+
+### 作為函式庫引用
+
+```bash
+go get github.com/pardnchiu/go-agent-skills
+```
+
 ## 設定
 
 ### 環境變數
 
-複製 `.env.example` 並填入對應的 API Key：
+| 變數 | 必要 | 說明 | 預設值 |
+|------|------|------|--------|
+| `OPENAI_API_KEY` | 條件性 | OpenAI API 金鑰 | — |
+| `ANTHROPIC_API_KEY` | 條件性 | Anthropic Claude API 金鑰 | — |
+| `GEMINI_API_KEY` | 條件性 | Google Gemini API 金鑰 | — |
+| `NVIDIA_API_KEY` | 條件性 | NVIDIA NIM API 金鑰 | — |
+| `COMPAT_URL` | 否 | OpenAI 相容端點 URL | `http://localhost:11434` |
+| `COMPAT_API_KEY` | 否 | 相容端點 API 金鑰 | — |
+
+複製 `.env.example` 並填入對應值：
 
 ```bash
 cp .env.example .env
 ```
 
-| 變數 | 必要 | 說明 |
-|------|------|------|
-| `OPENAI_API_KEY` | 否 | OpenAI API 金鑰 |
-| `ANTHROPIC_API_KEY` | 否 | Anthropic Claude API 金鑰 |
-| `GEMINI_API_KEY` | 否 | Google Gemini API 金鑰 |
-| `NVIDIA_API_KEY` | 否 | Nvidia API 金鑰 |
+### Agent 設定檔
 
-**注意：** GitHub Copilot 使用 Device Code 登入流程，不需要環境變數。
-
-### Agent 模型設定（config.json）
-
-在 `~/.config/go-agent-skills/config.json` 的 `models` 陣列中定義可用的 Agent 與 selectorBot 路由優先順序：
+在 `~/.config/agent-skills/config.json` 或 `./.config/agent-skills/config.json` 建立 Agent 清單：
 
 ```json
 {
+  "default_model": "claude@claude-sonnet-4-5",
   "models": [
-    { "name": "claude@claude-sonnet-4-5", "description": "適合高品質生成與 Skill 執行" },
-    { "name": "nvidia@openai/gpt-oss-120b", "description": "適合快速摘要與條列輸出" }
+    {
+      "name": "claude@claude-sonnet-4-5",
+      "description": "高品質任務、文件生成、程式碼分析"
+    },
+    {
+      "name": "openai@gpt-5-mini",
+      "description": "一般查詢、快速回答"
+    },
+    {
+      "name": "compat@qwen3:8b",
+      "description": "本地任務、離線使用"
+    }
   ]
 }
 ```
 
-每個條目的 `name` 欄位採用 `provider@model` 格式；selectorBot 依據 `description` 判斷任務適配度，自動選擇最合適的 Agent。
+`default_model` 指定的 Agent 會排在首位成為 Fallback。
 
-### Skill 掃描路徑
+### Skill 檔案
 
-系統會自動掃描以下路徑中的 `SKILL.md` 檔案：
+在以下任一路徑建立 `{skill-name}/SKILL.md`：
 
 ```
-{project}/.claude/skills/
-{project}/.skills/
-~/.claude/skills/
+./.claude/skills/
+./.skills/
+~/.claude/skills/           ← 推薦個人技能存放位置
 ~/.opencode/skills/
 ~/.openai/skills/
 ~/.codex/skills/
-/mnt/skills/public/
-/mnt/skills/user/
-/mnt/skills/examples/
+/mnt/skills/public
+/mnt/skills/user
+/mnt/skills/examples
 ```
 
-每個 Skill 需遵循以下結構：
+SKILL.md 格式：
 
-```
-~/.claude/skills/
-└── {skill_name}/
-    ├── SKILL.md              # Skill 定義檔（必要）
-    ├── scripts/              # 可執行腳本（選填）
-    ├── templates/            # 範本檔案（選填）
-    └── assets/               # 靜態資源（選填）
-```
+```markdown
+# skill-name
 
-## 使用方式
+Description: 一句話說明此 Skill 的用途（供 Selector Bot 判斷）
 
-### 列出所有已安裝的 Skill
-
-```bash
-./agent-skills list
+## 詳細指令內容
+...
 ```
 
-輸出範例：
+### 自訂 API 工具
 
-```
-Found 3 skill(s):
-
-• commit-generate
-  從 git diff 與專案脈絡生成語義化提交訊息
-  Path: /Users/user/.claude/skills/commit-generate
-
-• readme-generate
-  從原始碼分析自動生成雙語 README
-  Path: /Users/user/.claude/skills/readme-generate
-```
-
-### 執行指定的 Skill
-
-```bash
-# 互動模式（每次工具呼叫前會要求確認）
-./agent-skills run commit-generate "generate commit message"
-
-# 自動模式（跳過所有確認）
-./agent-skills run readme-generate "generate readme" --allow
-```
-
-### 自動匹配 Skill
-
-當不確定使用哪個 Skill 時，直接描述需求：
-
-```bash
-./agent-skills run "幫我生成一份 README 文件"
-```
-
-系統會透過 LLM 自動從已安裝的 Skill 中選擇最符合的項目執行。
-
-### 直接使用工具（無 Skill）
-
-若輸入不符合任何已安裝的 Skill，系統會退回至直接工具執行模式：
-
-```bash
-./agent-skills run "讀取 package.json 並列出所有相依套件"
-```
-
-## 命令列參考
-
-### 指令
-
-| 指令 | 語法 | 說明 |
-|------|------|------|
-| `list` | `./agent-skills list` | 列出所有已安裝的 Skill |
-| `run` | `./agent-skills run <skill_name> <input> [--allow]` | 執行指定的 Skill |
-| `run` | `./agent-skills run <input> [--allow]` | 自動匹配 Skill 或使用純工具模式 |
-
-### 旗標
-
-| 旗標 | 說明 |
-|------|------|
-| `--allow` | 跳過所有互動式確認提示，自動執行所有工具呼叫 |
-
-### 支援的 Agent
-
-執行 `run` 指令時，系統透過 selectorBot（`nvidia@openai/gpt-oss-20b`）自動從 Agent Registry 選擇最適合當前任務的 AI 後端，無需手動選擇。若要手動指定，可在輸入中使用 `use <agent>` 語法（例如：`use claude 幫我重構這段程式碼`）。
-
-| Agent | 認證方式 | 預設模型 | 環境變數 |
-|-------|----------|----------|----------|
-| GitHub Copilot | Device Code 登入 | `gpt-4.1` | 無（透過 OAuth） |
-| OpenAI | API Key | `gpt-5-mini` | `OPENAI_API_KEY` |
-| Claude | API Key | `claude-sonnet-4-5` | `ANTHROPIC_API_KEY` |
-| Gemini | API Key | `gemini-2.5-pro` | `GEMINI_API_KEY` |
-| Nvidia | API Key | `openai/gpt-oss-120b` | `NVIDIA_API_KEY` |
-
-> **注意：** Anthropic API Tier 1 的單次請求 input token 上限僅 30,000，不足以支撐大多數 Skill 執行。**建議使用 Tier 2 以上**以確保穩定運作。詳見 [Anthropic rate limits](https://docs.anthropic.com/en/api/rate-limits)。
-
-**GitHub Copilot 認證流程：**
-
-首次使用 Copilot Agent 時，系統會自動啟動 Device Code 登入流程：
-
-1. 終端機顯示認證 URL 與 User Code
-2. 在瀏覽器開啟 URL 並輸入 User Code
-3. 完成 GitHub 授權
-4. Token 自動儲存至 `~/.config/go-agent-skills/`
-
-Token 會在過期前自動更新，無需手動管理。
-
-### 內建工具
-
-所有 Agent 共享以下工具集合：
-
-| 工具 | 參數 | 說明 |
-|------|------|------|
-| `read_file` | `path` | 讀取指定路徑的檔案內容 |
-| `list_files` | `path`, `recursive?` | 列出目錄內容（`recursive` 為選填布林值） |
-| `glob_files` | `pattern` | 使用 glob 模式搜尋檔案（例如 `**/*.go`） |
-| `write_file` | `path`, `content` | 寫入或建立檔案（會覆蓋現有內容） |
-| `search_content` | `pattern`, `file_pattern?` | 使用正規表達式搜尋檔案內容；`file_pattern` 為選填 glob 篩選 |
-| `patch_edit` | `path`, `old_string`, `new_string` | 將 `old_string` 的第一個精確匹配替換為 `new_string` |
-| `run_command` | `command` | 執行白名單內的 shell 指令 |
-| `fetch_yahoo_finance` | `symbol`, `interval?`, `range?` | 股票報價與 K 線資料；interval: `1m`–`1wk`，range: `1d`–`max` |
-| `fetch_google_rss` | `keyword`, `time`, `lang?` | Google News RSS 搜尋；time: `1h`/`3h`/`6h`/`12h`/`24h`/`7d` |
-| `send_http_request` | `url`, `method?`, `headers?`, `body?`, `content_type?`, `timeout?` | 通用 HTTP 請求；method 預設 `GET`，timeout 最大 300 秒 |
-| `fetch_weather` | `city?`, `days?`, `hourly_interval?` | 透過 wttr.in 取得天氣預報；`days=-1` 僅回當前狀況，預設三天預報 |
-| `fetch_page` | `url` | 以 Chrome 無頭瀏覽器開啟網址，等待 JS 完整渲染後以 Markdown 格式返回頁面內容 |
-| `search_web` | `query`, `range?`, `limit?` | 透過 DuckDuckGo 搜尋網路；`range`: `1h`/`3h`/`6h`/`12h`/`1d`/`7d`/`1m`/`1y`；`limit` 最大 50 |
-| `calculate` | `expression` | 計算數學表達式；支援 `+`、`-`、`*`、`/`、`%`、`^`（冪次）、`()` 及函式：`sqrt`、`abs`、`pow(base,exp)`、`ceil`、`floor`、`round`、`log`、`log2`、`log10`、`sin`、`cos`、`tan` |
-| `search_history` | `session_id`, `keyword`, `limit?` | 在對話歷史中搜尋關鍵字，回傳相關歷史片段，排除最新 4 筆 |
-
-#### run_command 安全機制
-
-**白名單指令：**
-```
-git, go, node, npm, npx, yarn, pnpm, python3, pip3,
-make, docker, kubectl, curl, jq, cat, grep, find, sed,
-awk, ls, pwd, echo, date, wc, head, tail, sort, uniq
-```
-
-**rm 指令攔截：**
-
-當 LLM 嘗試執行 `rm` 時，系統會自動攔截並改為移動至專案根目錄的 `.Trash/` 資料夾：
-
-```bash
-# LLM 執行：rm old_file.txt
-# 實際行為：mv old_file.txt .Trash/old_file_20260207_143052.txt
-```
-
-若 `.Trash/` 中已存在同名檔案，會自動附加時間戳記避免覆蓋。
-
-**危險指令阻擋：**
-
-以下指令不在白名單內，執行時會直接拒絕：
-- `sudo`、`su`
-- `chmod`、`chown`
-- `dd`、`mkfs`
-- 任何非白名單的二進位檔案
-
-#### 動態 API 工具擴展（api.json）
-
-在專案目錄的 `.config/apis/` 或全域路徑 `~/.config/go-agent-skills/apis/` 下放置 JSON 檔案，每個檔案定義一個自訂 API 工具，啟動時自動以 `api_` 前綴載入。
-
-**檔案格式**（參考 `internal/tools/apiAdapter/example.json`）：
+在 `~/.config/agent-skills/apis/` 或 `./.config/agent-skills/apis/` 放置 JSON 設定檔：
 
 ```json
 {
-  "name": "tool_name",
-  "description": "此工具的功能描述",
+  "name": "my_api",
+  "description": "呼叫我的自訂服務",
   "endpoint": {
-    "url": "https://your.api/{id}/resource",
-    "method": "GET",
+    "url": "https://api.example.com/v1/data",
+    "method": "POST",
     "content_type": "json",
-    "headers": { "X-Custom-Header": "value" },
-    "query": { "static_param": "value" },
-    "timeout": 15
+    "timeout": 10
   },
   "auth": {
     "type": "bearer",
-    "header": "Authorization",
-    "env": "YOUR_API_KEY_ENV"
+    "env": "MY_API_KEY"
   },
   "parameters": {
-    "id": {
+    "query": {
       "type": "string",
-      "description": "資源 ID，對應 URL 中的 {id}",
-      "required": true,
-      "default": ""
+      "description": "查詢字串",
+      "required": true
     }
   },
   "response": {
@@ -266,210 +139,260 @@ awk, ls, pwd, echo, date, wc, head, tail, sort, uniq
 }
 ```
 
-> **Gemini 相容性注意：** Gemini 不支援工具定義中參數的 `"type": "integer"`。數字型 enum 欄位應改用 `"type": "string"` 搭配字串 enum（例如 `["1", "2", "6"]`），執行器內部會自動處理字串轉整數。
+掛載後工具名稱自動變為 `api_my_api`，AI 可直接呼叫。`auth.type` 支援 `bearer`、`apikey`、`basic`。
 
-## API 參考
+## 使用方式
 
-### Agent Interface
+### 列出所有可用 Skill
 
-所有 Agent 實作必須實作以下介面：
-
-```go
-type Agent interface {
-    Send(ctx context.Context, messages []Message, toolDefs []tools.Tool) (*OpenAIOutput, error)
-    Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- atypes.Event, allowAll bool) error
-}
+```bash
+agent-skills list
 ```
 
-#### Send
+輸出範例：
 
-```go
-Send(ctx context.Context, messages []Message, toolDefs []tools.Tool) (*OpenAIOutput, error)
+```
+Found 3 skill(s):
+
+• commit-generate
+  從 git diff 產生單句繁體中文 commit message
+  Path: /Users/user/.claude/skills/commit-generate
+
+• readme-generate
+  從原始碼分析自動生成雙語 README
+  Path: /Users/user/.claude/skills/readme-generate
 ```
 
-處理單次 LLM API 呼叫，傳入對話歷史與工具定義，回傳包含文字或工具呼叫的回應。
+### 執行任務（互動模式）
 
-**參數：**
-- `ctx`：執行上下文，用於取消或逾時控制
-- `messages`：對話歷史（system、user、assistant、tool 角色）
-- `toolDefs`：可用的工具定義陣列
-
-**回傳：**
-- `*OpenAIOutput`：LLM 回應，包含文字內容或工具呼叫請求
-- `error`：API 錯誤或網路錯誤
-
-#### Execute
-
-```go
-Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- atypes.Event, allowAll bool) error
+```bash
+agent-skills run "查詢台積電今日股價"
 ```
 
-管理完整的 Skill 執行迴圈，處理最多 32 次工具呼叫迭代。當 `skill` 為 `nil` 時，使用基礎系統提示詞直接執行工具。
+每次工具呼叫前會出現確認提示：
 
-**參數：**
-- `ctx`：執行上下文
-- `skill`：要執行的 Skill（`nil` 代表直接工具模式）
-- `userInput`：使用者輸入的任務描述
-- `events`：事件 Channel，用於接收工具呼叫請求、確認提示與執行結果事件
-- `allowAll`：是否跳過互動式確認
-
-**回傳：**
-- `error`：執行過程中的錯誤
-
-### NewScanner
-
-```go
-func NewScanner() *Scanner
+```
+[*] Skill: fetch-finance
+[*] claude@claude-sonnet-4-5
+[*] Fetch Ticker — 2330.TW (1d)
+? Run fetch_yahoo_finance? [Yes/Skip/Stop]
 ```
 
-建立 Skill 掃描器並立即掃描所有設定路徑。掃描過程為並行執行，使用 goroutine 同時處理多個路徑。
+### 執行任務（自動模式）
 
-**回傳：**
-- `*Scanner`：包含已掃描 Skill 的掃描器實例
-
-**使用範例：**
-
-```go
-scanner := skill.NewScanner()
-
-// 列出所有 Skill 名稱
-names := scanner.List()
-
-// 根據名稱取得 Skill
-if s, ok := scanner.Skills.ByName["commit-generate"]; ok {
-    fmt.Println(s.Description)
-}
+```bash
+agent-skills run "生成 README" --allow
 ```
 
-### NewExecutor
+`--allow` 跳過所有工具確認提示，完全自動執行。
 
-```go
-func NewExecutor(workPath string) (*Executor, error)
+### 執行指定 Skill
+
+框架會自動以 LLM 匹配最適合的 Skill，也可在輸入中明確提及 Skill 名稱：
+
+```bash
+agent-skills run "commit-generate: 為目前的 git 變更生成 commit message" --allow
 ```
 
-建立工具執行器，載入工具定義並設定工作目錄。
-
-**參數：**
-- `workPath`：工具執行的工作目錄路徑
-
-**回傳：**
-- `*Executor`：已初始化的執行器
-- `error`：初始化錯誤（例如工具定義檔案讀取失敗）
-
-### Execute (Executor)
-
-```go
-func (e *Executor) Execute(name string, args json.RawMessage) (string, error)
-```
-
-執行指定的工具並回傳結果。所有錯誤會轉換為字串回傳，確保 LLM 能理解錯誤訊息。
-
-**參數：**
-- `name`：工具名稱（例如 `read_file`）
-- `args`：JSON 格式的工具參數
-
-**回傳：**
-- `string`：工具執行結果或錯誤訊息
-- `error`：僅在工具不存在時回傳
-
-**使用範例：**
-
-```go
-exec, _ := tools.NewExecutor("/path/to/project")
-
-// 讀取檔案
-result, _ := exec.Execute("read_file", json.RawMessage(`{"path": "README.md"}`))
-
-// 執行指令
-result, _ := exec.Execute("run_command", json.RawMessage(`{"command": "git status"}`))
-```
-
-## 進階用法
-
-### 自訂 Skill 開發
-
-建立自訂 Skill 的基本步驟：
-
-1. 在任一掃描路徑中建立資料夾（例如 `~/.claude/skills/my-skill/`）
-2. 建立 `SKILL.md` 檔案，包含以下 metadata：
-
-```markdown
----
-name: my-skill
-description: 簡短描述此 Skill 的功能
----
-
-# My Skill
-
-[詳細的 Skill 指引與範例]
-```
-
-3. （選填）建立輔助資源：
-   - `scripts/` — 可執行腳本（Python、Shell 等）
-   - `templates/` — 範本檔案
-   - `assets/` — 靜態資源（圖片、設定檔等）
-
-4. 重新執行 `./agent-skills list` 驗證 Skill 已被掃描
-
-**路徑解析規則：**
-
-在 `SKILL.md` 中引用 `scripts/`、`templates/`、`assets/` 時，系統會自動解析為絕對路徑：
-
-```markdown
-執行以下指令：
-python3 scripts/analyze.py
-```
-
-實際執行時會替換為：
-```
-python3 /Users/user/.claude/skills/my-skill/scripts/analyze.py
-```
-
-### 程式化使用
+### 作為函式庫使用
 
 ```go
 package main
 
 import (
     "context"
+    "fmt"
 
+    "github.com/pardnchiu/go-agent-skills/internal/agents/exec"
+    "github.com/pardnchiu/go-agent-skills/internal/agents/provider/claude"
+    "github.com/pardnchiu/go-agent-skills/internal/agents/provider/openai"
     atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
-    "github.com/pardnchiu/go-agent-skills/internal/agents/openai"
     "github.com/pardnchiu/go-agent-skills/internal/skill"
 )
 
 func main() {
+    ctx := context.Background()
+
     // 初始化 Agent
-    agent, _ := openai.New()
+    claudeAgent, err := claude.New("claude@claude-sonnet-4-5")
+    if err != nil {
+        panic(err)
+    }
+    oaiAgent, err := openai.New("openai@gpt-5-mini")
+    if err != nil {
+        panic(err)
+    }
 
-    // 掃描 Skill
+    // 建立 Agent Registry
+    registry := atypes.AgentRegistry{
+        Registry: map[string]atypes.Agent{
+            "claude@claude-sonnet-4-5": claudeAgent,
+            "openai@gpt-5-mini":        oaiAgent,
+        },
+        Entries: []atypes.AgentEntry{
+            {Name: "claude@claude-sonnet-4-5", Description: "高品質任務"},
+            {Name: "openai@gpt-5-mini", Description: "一般查詢"},
+        },
+        Fallback: claudeAgent,
+    }
+
+    // Selector Bot（用輕量模型做路由）
+    selectorBot, _ := openai.New("openai@gpt-5-mini")
+
     scanner := skill.NewScanner()
-    targetSkill := scanner.Skills.ByName["commit-generate"]
+    events := make(chan atypes.Event, 16)
 
-    // 建立事件 Channel 並消費事件
-    events := make(chan atypes.Event, 64)
     go func() {
-        for event := range events {
-            // 處理工具呼叫請求、確認提示與執行結果
-            _ = event
+        defer close(events)
+        if err := exec.Run(ctx, selectorBot, registry, scanner, "查詢台積電股價", events, true); err != nil {
+            fmt.Println("Error:", err)
         }
     }()
 
-    // 執行 Skill
-    ctx := context.Background()
-    agent.Execute(ctx, targetSkill, "generate commit message", events, false)
+    for ev := range events {
+        switch ev.Type {
+        case atypes.EventText:
+            fmt.Println(ev.Text)
+        case atypes.EventDone:
+            fmt.Println("完成")
+        }
+    }
 }
 ```
 
-### Tool Call 迭代限制
-
-系統預設最多執行 32 次工具呼叫迭代，避免 LLM 進入無限迴圈。若需調整此限制：
+### 調整迭代上限
 
 ```go
-import "github.com/pardnchiu/go-agent-skills/internal/agents"
+import "github.com/pardnchiu/go-agent-skills/internal/agents/exec"
 
 func init() {
-    agents.MaxToolIterations = 8  // 調整至 64 次
+    exec.MaxToolIterations  = 16  // 一般對話模式（預設 8）
+    exec.MaxSkillIterations = 64  // Skill 執行模式（預設 128）
+}
+```
+
+## 命令列參考
+
+### 指令
+
+| 指令 | 語法 | 說明 |
+|------|------|------|
+| `list` | `agent-skills list` | 列出所有已掃描到的 Skill |
+| `run` | `agent-skills run <input> [--allow]` | 執行任務 |
+
+### 旗標
+
+| 旗標 | 說明 |
+|------|------|
+| `--allow` | 跳過所有工具呼叫的互動確認提示 |
+
+### 支援的 Agent Provider
+
+| Provider | 認證方式 | 預設模型 | 環境變數 |
+|----------|----------|----------|----------|
+| `copilot` | Device Code 互動登入 | `gpt-4.1` | — |
+| `openai` | API Key | `gpt-5-mini` | `OPENAI_API_KEY` |
+| `claude` | API Key | `claude-sonnet-4-5` | `ANTHROPIC_API_KEY` |
+| `gemini` | API Key | `gemini-2.5-pro` | `GEMINI_API_KEY` |
+| `nvidia` | API Key | `openai/gpt-oss-120b` | `NVIDIA_API_KEY` |
+| `compat` | 選填 API Key | `qwen3:8b` | `COMPAT_URL`, `COMPAT_API_KEY` |
+
+模型格式：`{provider}@{model-name}`，例如 `claude@claude-opus-4-6`。
+
+### 內建工具
+
+| 工具 | 參數 | 說明 |
+|------|------|------|
+| `read_file` | `path` | 讀取指定路徑的檔案內容 |
+| `list_files` | `path` | 列出目錄中的檔案與子目錄 |
+| `glob_files` | `pattern` | 以 Glob 模式搜尋檔案（如 `**/*.go`） |
+| `write_file` | `path`, `content` | 寫入或建立檔案 |
+| `patch_edit` | `path`, `old`, `new` | 精確字串替換（比 write_file 安全）|
+| `search_content` | `pattern`, `path`, `file_pattern` | Regex 搜尋檔案內容 |
+| `search_history` | `keyword`, `time_range` | 搜尋當前 Session 歷史，支援 `1d`/`7d`/`1m`/`1y` 時間過濾 |
+| `run_command` | `command` | 執行白名單 Shell 指令 |
+| `fetch_page` | `url` | Chrome 渲染後擷取頁面（支援 SPA/動態頁面） |
+| `search_web` | `query`, `range` | DuckDuckGo 搜尋，返回標題/網址/摘要 |
+| `fetch_yahoo_finance` | `symbol`, `range` | 股票即時報價與 K 線資料 |
+| `fetch_google_rss` | `keyword`, `time` | Google News RSS 新聞搜尋 |
+| `fetch_weather` | `city` | 即時天氣與預報（可省略以取得目前位置） |
+| `send_http_request` | `url`, `method`, `headers`, `body` | 通用 HTTP 請求 |
+| `calculate` | `expression` | 精確數學運算（支援 `^`、`sqrt`、`abs` 等） |
+
+### 允許的 Shell 指令
+
+`run_command` 工具限制只能執行以下指令：
+`git`, `go`, `node`, `npm`, `yarn`, `pnpm`, `python`, `python3`, `pip`, `pip3`, `ls`, `cat`, `head`, `tail`, `pwd`, `mkdir`, `touch`, `cp`, `mv`, `rm`, `grep`, `sed`, `awk`, `sort`, `uniq`, `diff`, `cut`, `tr`, `wc`, `find`, `jq`, `echo`, `which`, `date`, `docker`, `podman`
+
+## API 參考
+
+### Agent Interface
+
+```go
+type Agent interface {
+    Send(ctx context.Context, messages []Message, toolDefs []tools.Tool) (*Output, error)
+    Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- Event, allowAll bool) error
+}
+```
+
+`Send` 發送單次 LLM API 請求。`Execute` 管理完整的 Skill 執行迴圈，包含工具迭代、快取與 Session 寫入。
+
+### AgentRegistry
+
+```go
+type AgentRegistry struct {
+    Registry map[string]Agent  // 依名稱索引的 Agent 實例
+    Entries  []AgentEntry      // 供 Selector Bot 路由用的 Agent 描述清單
+    Fallback Agent             // 路由失敗時使用的預設 Agent
+}
+```
+
+### exec.Run
+
+```go
+func Run(
+    ctx      context.Context,
+    bot      Agent,           // Selector Bot（輕量模型）
+    registry AgentRegistry,   // 可用 Agent 清單
+    scanner  *skill.Scanner,  // Skill 掃描器
+    input    string,          // 使用者輸入
+    events   chan<- Event,    // 事件輸出通道
+    allowAll bool,            // true = 跳過所有工具確認
+) error
+```
+
+### Event Types
+
+```go
+const (
+    EventText        // Agent 輸出文字（含 Skill/Agent 路由狀態）
+    EventToolCall    // 工具即將被呼叫
+    EventToolConfirm // 等待使用者確認（allowAll=false 時觸發）
+    EventToolSkipped // 使用者跳過工具
+    EventToolResult  // 工具執行結果
+    EventError       // 錯誤事件
+    EventDone        // 本次請求完成
+)
+```
+
+### skill.NewScanner
+
+```go
+func NewScanner() *Scanner
+```
+
+建立並執行並發 Skill 掃描，掃描 9 個標準路徑。找到重複名稱的 Skill 時以先掃描到的為準。
+
+### APIDocumentData（自訂 API 設定結構）
+
+```go
+type APIDocumentData struct {
+    Name        string                       // 工具名稱（會自動加上 api_ 前綴）
+    Description string                       // 工具說明（供 LLM 判斷使用時機）
+    Endpoint    APIDocumentEndpointData      // URL、Method、ContentType、Timeout
+    Auth        *APIDocumentAuthData         // 認證（bearer/apikey/basic）
+    Parameters  map[string]APIParameterData  // 參數定義（含 required、default）
+    Response    APIDocumentResponseData      // 回應格式（json 或 text）
 }
 ```
 

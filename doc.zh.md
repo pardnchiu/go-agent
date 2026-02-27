@@ -46,6 +46,21 @@ cp .env.example .env
 
 **注意：** GitHub Copilot 使用 Device Code 登入流程，不需要環境變數。
 
+### Agent 模型設定（config.json）
+
+在 `~/.config/go-agent-skills/config.json` 的 `models` 陣列中定義可用的 Agent 與 selectorBot 路由優先順序：
+
+```json
+{
+  "models": [
+    { "name": "claude@claude-sonnet-4-5", "description": "適合高品質生成與 Skill 執行" },
+    { "name": "nvidia@openai/gpt-oss-120b", "description": "適合快速摘要與條列輸出" }
+  ]
+}
+```
+
+每個條目的 `name` 欄位採用 `provider@model` 格式；selectorBot 依據 `description` 判斷任務適配度，自動選擇最合適的 Agent。
+
 ### Skill 掃描路徑
 
 系統會自動掃描以下路徑中的 `SKILL.md` 檔案：
@@ -141,15 +156,15 @@ Found 3 skill(s):
 
 ### 支援的 Agent
 
-執行 `run` 指令時，系統會提示選擇 Agent：
+執行 `run` 指令時，系統透過 selectorBot（`nvidia@openai/gpt-oss-20b`）自動從 Agent Registry 選擇最適合當前任務的 AI 後端，無需手動選擇。若要手動指定，可在輸入中使用 `use <agent>` 語法（例如：`use claude 幫我重構這段程式碼`）。
 
 | Agent | 認證方式 | 預設模型 | 環境變數 |
 |-------|----------|----------|----------|
 | GitHub Copilot | Device Code 登入 | `gpt-4.1` | 無（透過 OAuth） |
-| OpenAI | API Key | `gpt-5-nano` | `OPENAI_API_KEY` |
+| OpenAI | API Key | `gpt-5-mini` | `OPENAI_API_KEY` |
 | Claude | API Key | `claude-sonnet-4-5` | `ANTHROPIC_API_KEY` |
-| Gemini | API Key | `gemini-2.0-flash-exp` | `GEMINI_API_KEY` |
-| Nvidia | API Key | `meta/llama-3.3-70b-instruct` | `NVIDIA_API_KEY` |
+| Gemini | API Key | `gemini-2.5-pro` | `GEMINI_API_KEY` |
+| Nvidia | API Key | `openai/gpt-oss-120b` | `NVIDIA_API_KEY` |
 
 > **注意：** Anthropic API Tier 1 的單次請求 input token 上限僅 30,000，不足以支撐大多數 Skill 執行。**建議使用 Tier 2 以上**以確保穩定運作。詳見 [Anthropic rate limits](https://docs.anthropic.com/en/api/rate-limits)。
 
@@ -184,6 +199,7 @@ Token 會在過期前自動更新，無需手動管理。
 | `fetch_page` | `url` | 以 Chrome 無頭瀏覽器開啟網址，等待 JS 完整渲染後以 Markdown 格式返回頁面內容 |
 | `search_web` | `query`, `range?`, `limit?` | 透過 DuckDuckGo 搜尋網路；`range`: `1h`/`3h`/`6h`/`12h`/`1d`/`7d`/`1m`/`1y`；`limit` 最大 50 |
 | `calculate` | `expression` | 計算數學表達式；支援 `+`、`-`、`*`、`/`、`%`、`^`（冪次）、`()` 及函式：`sqrt`、`abs`、`pow(base,exp)`、`ceil`、`floor`、`round`、`log`、`log2`、`log10`、`sin`、`cos`、`tan` |
+| `search_history` | `session_id`, `keyword`, `limit?` | 在對話歷史中搜尋關鍵字，回傳相關歷史片段，排除最新 4 筆 |
 
 #### run_command 安全機制
 

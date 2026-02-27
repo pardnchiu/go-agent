@@ -46,6 +46,21 @@ cp .env.example .env
 
 **Note:** GitHub Copilot uses Device Code authentication flow and does not require environment variables.
 
+### Agent Model Configuration (config.json)
+
+Define available agents and selectorBot routing priority in the `models` array of `~/.config/go-agent-skills/config.json`:
+
+```json
+{
+  "models": [
+    { "name": "claude@claude-sonnet-4-5", "description": "Best for high-quality generation and Skill execution" },
+    { "name": "nvidia@openai/gpt-oss-120b", "description": "Best for fast summarization and bullet-point output" }
+  ]
+}
+```
+
+The `name` field uses `provider@model` format. The selectorBot evaluates task fit based on each entry's `description` and automatically selects the most suitable agent.
+
 ### Skill Scan Paths
 
 The system automatically scans for `SKILL.md` files in the following paths:
@@ -141,15 +156,15 @@ If the input doesn't match any installed Skill, the system falls back to direct 
 
 ### Supported Agents
 
-When executing `run` command, the system prompts for Agent selection:
+When executing the `run` command, a selectorBot (`nvidia@openai/gpt-oss-20b`) automatically selects the best AI backend from the Agent Registry for the current task — no manual selection required. To override, use `use <agent>` syntax in your input (e.g., `use claude refactor this function`).
 
 | Agent | Authentication | Default Model | Environment Variable |
 |-------|----------------|---------------|----------------------|
 | GitHub Copilot | Device Code login | `gpt-4.1` | None (via OAuth) |
-| OpenAI | API Key | `gpt-5-nano` | `OPENAI_API_KEY` |
+| OpenAI | API Key | `gpt-5-mini` | `OPENAI_API_KEY` |
 | Claude | API Key | `claude-sonnet-4-5` | `ANTHROPIC_API_KEY` |
-| Gemini | API Key | `gemini-2.0-flash-exp` | `GEMINI_API_KEY` |
-| Nvidia | API Key | `meta/llama-3.3-70b-instruct` | `NVIDIA_API_KEY` |
+| Gemini | API Key | `gemini-2.5-pro` | `GEMINI_API_KEY` |
+| Nvidia | API Key | `openai/gpt-oss-120b` | `NVIDIA_API_KEY` |
 
 > **Note:** Anthropic API Tier 1 limits input tokens to 30,000 per request, which is insufficient for most Skill executions. **Tier 2 or above is recommended** for reliable operation. See [Anthropic rate limits](https://docs.anthropic.com/en/api/rate-limits) for tier details.
 
@@ -184,6 +199,7 @@ All Agents share the following tool collection:
 | `fetch_page` | `url` | Open URL in headless Chrome, wait for full JS render, return content as Markdown |
 | `search_web` | `query`, `range?`, `limit?` | Web search via DuckDuckGo; `range`: `1h`/`3h`/`6h`/`12h`/`1d`/`7d`/`1m`/`1y`; `limit` max 50 |
 | `calculate` | `expression` | Evaluate math expression; supports `+`, `-`, `*`, `/`, `%`, `^` (power), `()`, and functions: `sqrt`, `abs`, `pow(base,exp)`, `ceil`, `floor`, `round`, `log`, `log2`, `log10`, `sin`, `cos`, `tan` |
+| `search_history` | `session_id`, `keyword`, `limit?` | Search conversation history for a keyword; returns relevant history segments, excluding the latest 4 entries |
 
 #### run_command Safety Mechanisms
 

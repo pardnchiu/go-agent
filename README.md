@@ -10,7 +10,7 @@
 [![license](https://img.shields.io/github/license/pardnchiu/go-agent-skills)](LICENSE)
 [![version](https://img.shields.io/github/v/tag/pardnchiu/go-agent-skills?label=release)](https://github.com/pardnchiu/go-agent-skills/releases)
 
-> Unified Skill execution engine for multiple AI agents, supporting GitHub Copilot, OpenAI, Claude, Gemini, and Nvidia
+> A self-directed execution engine driven by Markdown Skill files, with persistent cross-session memory and dual-layer LLM routing to automatically dispatch Skills and Agents
 
 ## Table of Contents
 
@@ -25,35 +25,55 @@
 
 > `go install github.com/pardnchiu/go-agent-skills/cmd/cli@latest` · [Documentation](./doc.md)
 
-### Unified 5-Backend Agent Interface
+### Skill-as-Prompt: Markdown-Driven LLM Instruction Framework
 
-A single `Agent` interface covers GitHub Copilot (device-code auth), OpenAI, Anthropic Claude, Google Gemini, and Nvidia. Switching backends requires no changes to Skills or tool definitions — the system automatically handles message format conversion and tool call normalization across all providers.
+Skills are plain Markdown files injected directly as structured system prompts into the execution loop. The engine automatically scans multiple paths (project, user home, global mount points), parses frontmatter, and dynamically resolves `scripts/`, `templates/`, and `assets/` references to absolute paths. Extending capabilities requires no source code changes — just place a `SKILL.md` in any scan path and the system picks it up on the next run.
 
-### LLM-Driven Skill Auto-Matching
+### Persistent Cross-Session Memory with Auto-Summary Compression
 
-The LLM analyzes user input and automatically identifies the best matching Skill from installed definitions — no manual selection required. If no Skill matches, the system gracefully degrades to tool-only mode and iterates up to 32 tool calls to complete complex tasks end-to-end.
+Session state is preserved across multiple invocations. After each LLM response, the system automatically extracts a structured summary from the output (via `<!--SUMMARY_START-->` markers or a fallback trailing JSON block pattern), then injects the summary in place of full history on the next call — drastically reducing token consumption. The built-in `search_history` tool lets the LLM actively retrieve its own past decisions during long workflows.
 
-### Safe Tool Executor with Dynamic API Extension
+### Dual-Layer LLM Auto-Routing and Safe Tool Executor
 
-Built-in `rm` interception moves files to `.Trash` instead of permanent deletion, paired with a strict command whitelist to limit shell exposure. Beyond the 14 built-in tools (file operations, Yahoo Finance, Google News, weather, HTTP), custom API tools can be added dynamically via JSON config files — no source code modification required.
+Both Skill selection and Agent selection are driven by dedicated lightweight LLM calls, requiring zero user intervention. Tool calls are deduplicated via a content-hash cache to prevent redundant executions. `rm` commands are intercepted and redirected to `.Trash/` instead of permanent deletion, and shell access is strictly gated by a whitelist. Custom API tools load dynamically from JSON config files — no source modification needed.
 
 ## Architecture
 
 ```mermaid
 graph LR
-    A[User Input] --> B[CLI Entry]
-    B --> C[Agent Selector]
-    C --> D1[Copilot]
-    C --> D2[OpenAI]
-    C --> D3[Claude]
-    C --> D4[Gemini]
-    C --> D5[Nvidia]
-    D1 & D2 & D3 & D4 & D5 --> E[Execute Loop]
-    E --> F{Skill Match?}
-    F -->|Yes| G[Skill Context]
-    F -->|No| H[Tool-only Mode]
-    G & H --> I[Tool Executor]
-    I --> J[File Tools / API Tools / Commands]
+    A[User Input] --> B[CLI]
+
+    subgraph ROUTING["Routing"]
+        direction TB
+        C1[Skill Selector]
+        C2[Agent Selector]
+    end
+
+    subgraph AGENTS["AI Backends"]
+        direction TB
+        D1[Copilot]
+        D2[OpenAI]
+        D3[Claude]
+        D4[Gemini]
+        D5[Nvidia]
+    end
+
+    subgraph EXEC["Execution"]
+        direction TB
+        E[Execute Loop]
+        F[Tool Executor]
+        G1[File]
+        G2[API]
+        G3[Commands]
+        E --> F
+        F --> G1 & G2 & G3
+    end
+
+    B --> C1 & C2
+    C2 --> D1 & D2 & D3 & D4 & D5
+    C1 -->|Skill Matched| E
+    C1 -->|No Match| E
+    D1 & D2 & D3 & D4 & D5 --> E
 ```
 
 ## File Structure
@@ -62,19 +82,26 @@ graph LR
 go-agent-skills/
 ├── cmd/
 │   └── cli/
-│       └── main.go           # CLI entry point
+│       └── main.go               # CLI entry point
 ├── internal/
-│   ├── agents/               # Agent implementations
-│   │   ├── exec.go          # Unified execution loop
-│   │   └── provider/        # Claude, OpenAI, Copilot, Gemini, Nvidia
-│   ├── skill/                # Skill scanner & parser
-│   ├── tools/                # Tool executor
-│   │   ├── apis/            # Yahoo Finance, Google RSS, Weather
-│   │   │   └── searchWeb/   # Web search (Brave + DuckDuckGo)
-│   │   ├── apiAdapter/      # JSON-driven dynamic API loader
-│   │   ├── browser/         # Headless Chrome page fetch
-│   │   ├── calculator/      # Math expression evaluator
-│   │   └── file/            # File operation tools
+│   ├── agents/
+│   │   ├── exec/                 # Unified execution package
+│   │   │   ├── execute.go        # Execution loop
+│   │   │   ├── run.go            # Entry point + AgentRegistry
+│   │   │   ├── selectAgent.go    # LLM Agent routing
+│   │   │   ├── selectSkill.go    # LLM Skill routing
+│   │   │   ├── getSession.go     # Session management
+│   │   │   ├── extractSummary.go # Auto-summary extraction
+│   │   │   ├── writeHistory.go   # History persistence
+│   │   │   └── toolCall.go       # Deduplicated tool execution
+│   │   └── provider/             # Claude, OpenAI, Copilot, Gemini, Nvidia
+│   ├── skill/                    # Skill scanner & parser
+│   ├── tools/                    # Tool executor
+│   │   ├── apis/                 # Yahoo Finance, Google RSS, Weather
+│   │   ├── apiAdapter/           # JSON-driven dynamic API loader
+│   │   ├── browser/              # Headless Chrome page fetch
+│   │   ├── calculator/           # Math expression evaluator
+│   │   └── file/                 # File operation tools (incl. searchHistory)
 ├── go.mod
 └── README.md
 ```

@@ -71,7 +71,7 @@ func toolCall(ctx context.Context, exec *types.Executor, choice OpenAIOutputChoi
 
 		result, err := tools.Execute(ctx, exec, toolName, json.RawMessage(tool.Function.Arguments))
 		if err != nil {
-			result = fmt.Sprintf("Error '%s': %v", toolName, err)
+			result = "No data available. Please try a different approach or tool."
 		}
 
 		alreadyCall[hash] = fmt.Sprintf("Tool '%s'\nresult: %s", toolName, result)

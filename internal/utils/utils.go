@@ -134,9 +134,10 @@ const (
 type ConfigDirData struct {
 	Home string
 	Work string
+	Dirs []string
 }
 
-func ConfigDir(path ...string) (*ConfigDirData, error) {
+func GetConfigDir(path ...string) (*ConfigDirData, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("os.UserHomeDir: %w", err)
@@ -147,9 +148,16 @@ func ConfigDir(path ...string) (*ConfigDirData, error) {
 		return nil, fmt.Errorf("os.Getwd: %w", err)
 	}
 
+	homeDir = filepath.Join(append([]string{homeDir, ".config", projectName}, path...)...)
+	workDir = filepath.Join(append([]string{workDir, ".config", projectName}, path...)...)
+
 	config := &ConfigDirData{
-		Home: filepath.Join(append([]string{homeDir, ".config", projectName}, path...)...),
-		Work: filepath.Join(append([]string{workDir, ".config", projectName}, path...)...),
+		Home: homeDir,
+		Work: workDir,
+		Dirs: []string{
+			homeDir,
+			workDir,
+		},
 	}
 
 	err = os.MkdirAll(config.Home, 0755)

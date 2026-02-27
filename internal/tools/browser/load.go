@@ -41,7 +41,7 @@ func Load(url string) (string, error) {
 	hash := sha256.Sum256([]byte(url))
 	cacheKey := hex.EncodeToString(hash[:])
 
-	configDir, err := utils.ConfigDir("tools", "browser", "cached")
+	configDir, err := utils.GetConfigDir("tools", "browser", "cached")
 
 	clean(configDir.Home, cacheExpiry)
 	cachePath := filepath.Join(configDir.Home, cacheKey+".md")

@@ -12,7 +12,7 @@ import (
 //go:embed prompt/skillSelector.md
 var skillSelectorPrompt string
 
-func selectSkill(ctx context.Context, agent Agent, scanner *skill.Scanner, userInput string) *skill.Skill {
+func selectSkill(ctx context.Context, bot Agent, scanner *skill.Scanner, userInput string) *skill.Skill {
 	skills := scanner.List()
 	if len(skills) == 0 {
 		return nil
@@ -32,7 +32,7 @@ func selectSkill(ctx context.Context, agent Agent, scanner *skill.Scanner, userI
 		},
 	}
 
-	resp, err := agent.Send(ctx, messages, nil)
+	resp, err := bot.Send(ctx, messages, nil)
 	if err != nil || len(resp.Choices) == 0 {
 		return nil
 	}

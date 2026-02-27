@@ -110,8 +110,9 @@
           },
           "limit": {
             "type": "integer",
-            "description": "回傳筆數上限，由新到舊取前 N 筆。預設 10，最大建議 50。",
-            "default": 10
+            "description": "回傳筆數上限，由新到舊取前 N 筆。預設 10，最大 20。",
+            "default": 10,
+            "maximum": 20
           }
         },
         "required": ["keyword"]

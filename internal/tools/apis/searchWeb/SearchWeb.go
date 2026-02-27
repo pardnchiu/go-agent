@@ -51,7 +51,7 @@ func Search(ctx context.Context, query string, timeRange TimeRange, limit int) (
 		return "", fmt.Errorf("invalid time range %q: must be one of 1h, 3h, 6h, 12h, 1d, 7d, 1m, 1y", timeRange)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	results, err := fetchDDG(ctx, query, timeRange, limit)

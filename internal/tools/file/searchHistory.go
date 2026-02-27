@@ -22,11 +22,11 @@ func searchHistory(sessionID, keyword string, limit int) (string, error) {
 	if sessionID == "" {
 		return "", fmt.Errorf("sessionID is required")
 	}
-	if limit <= 0 {
-		limit = 10
+	if limit <= 0 || limit > 20 {
+		limit = 20
 	}
 
-	configDir, err := utils.ConfigDir("sessions")
+	configDir, err := utils.GetConfigDir("sessions")
 	if err != nil {
 		return "", fmt.Errorf("utils.ConfigDir: %w", err)
 	}

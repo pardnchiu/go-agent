@@ -41,7 +41,7 @@ func NewExecutor(workPath, sessionID string) (*types.Executor, error) {
 
 	apiToolbox := apiAdapter.New()
 
-	if configDir, err := utils.ConfigDir("apis"); err == nil {
+	if configDir, err := utils.GetConfigDir("apis"); err == nil {
 		apiToolbox.Load(configDir.Home)
 		apiToolbox.Load(configDir.Work)
 	}

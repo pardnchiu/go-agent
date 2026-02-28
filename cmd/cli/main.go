@@ -105,30 +105,30 @@ func printTool(ev atypes.Event) {
 	json.Unmarshal([]byte(ev.ToolArgs), &args)
 
 	switch ev.ToolName {
-	case "read_file":
-		fmt.Printf("[*] Read File — \033[36m%s\033[0m\n", args["path"])
-	case "list_files":
-		fmt.Printf("[*] List Directory — \033[36m%s\033[0m\n", args["path"])
-	case "glob_files":
-		fmt.Printf("[*] Glob Files — \033[35m%s\033[0m\n", args["pattern"])
-	case "write_file":
-		fmt.Printf("[*] Write File — \033[33m%s\033[0m\n", args["path"])
-	case "search_content":
-		fmt.Printf("[*] Search Content — \033[35m%s\033[0m\n", args["pattern"])
-	case "patch_edit":
-		fmt.Printf("[*] Patch Edit — \033[33m%s\033[0m\n", args["path"])
-	case "run_command":
-		fmt.Printf("[*] Run Command — \033[32m%s\033[0m\n", args["command"])
-	case "fetch_yahoo_finance":
-		fmt.Printf("[*] Fetch Ticker — \033[34m%s (%s)\033[0m\n", args["symbol"], args["range"])
-	case "fetch_google_rss":
-		fmt.Printf("[*] Fetch News — \033[34m%s (%s)\033[0m\n", args["keyword"], args["time"])
-	case "fetch_page":
-		url := fmt.Sprintf("%v", args["url"])
-		if len(url) > 64 {
-			url = url[:61] + "..."
-		}
-		fmt.Printf("[*] Fetch Page — \033[34m%s\033[0m\n", url)
+	// case "read_file":
+	// 	fmt.Printf("[*] Read File — \033[36m%s\033[0m\n", args["path"])
+	// case "list_files":
+	// 	fmt.Printf("[*] List Directory — \033[36m%s\033[0m\n", args["path"])
+	// case "glob_files":
+	// 	fmt.Printf("[*] Glob Files — \033[35m%s\033[0m\n", args["pattern"])
+	// case "write_file":
+	// 	fmt.Printf("[*] Write File — \033[33m%s\033[0m\n", args["path"])
+	// case "search_content":
+	// 	fmt.Printf("[*] Search Content — \033[35m%s\033[0m\n", args["pattern"])
+	// case "patch_edit":
+	// 	fmt.Printf("[*] Patch Edit — \033[33m%s\033[0m\n", args["path"])
+	// case "run_command":
+	// 	fmt.Printf("[*] Run Command — \033[32m%s\033[0m\n", args["command"])
+	// case "fetch_yahoo_finance":
+	// 	fmt.Printf("[*] Fetch Ticker — \033[34m%s (%s)\033[0m\n", args["symbol"], args["range"])
+	// case "fetch_google_rss":
+	// 	fmt.Printf("[*] Fetch News — \033[34m%s (%s)\033[0m\n", args["keyword"], args["time"])
+	// case "fetch_page":
+	// 	url := fmt.Sprintf("%v", args["url"])
+	// 	if len(url) > 64 {
+	// 		url = url[:61] + "..."
+	// 	}
+	// 	fmt.Printf("[*] Fetch Page — \033[34m%s\033[0m\n", url)
 	default:
 		var buf bytes.Buffer
 		enc := json.NewEncoder(&buf)

@@ -20,7 +20,7 @@ var skillExtensionPrompt string
 var summaryPrompt string
 
 var (
-	MaxToolIterations  = 8
+	MaxToolIterations  = 16
 	MaxSkillIterations = 128
 )
 

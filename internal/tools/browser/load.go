@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -102,9 +103,16 @@ func load(ctx context.Context, url string) (*Data, error) {
 	return result, nil
 }
 
+func hasDisplay() bool {
+	if runtime.GOOS == "darwin" {
+		return true
+	}
+	return os.Getenv("DISPLAY") != "" || os.Getenv("WAYLAND_DISPLAY") != ""
+}
+
 func newBrowser() (*rod.Browser, error) {
 	newLancher := launcher.New().
-		Headless(true).
+		Headless(!hasDisplay()).
 		Set("disable-blink-features", "AutomationControlled").
 		Set("disable-infobars", "").
 		Set("no-sandbox", "").

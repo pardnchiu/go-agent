@@ -267,7 +267,7 @@ import "github.com/pardnchiu/go-agent-skills/internal/agents/exec"
 
 func init() {
     exec.MaxToolIterations  = 16  // 一般對話模式（預設 8）
-    exec.MaxSkillIterations = 64  // Skill 執行模式（預設 128）
+    exec.MaxSkillIterations = 128  // Skill 執行模式（預設 128）
 }
 ```
 

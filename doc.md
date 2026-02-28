@@ -267,7 +267,7 @@ import "github.com/pardnchiu/go-agent-skills/internal/agents/exec"
 
 func init() {
     exec.MaxToolIterations  = 16  // General conversation mode (default: 8)
-    exec.MaxSkillIterations = 64  // Skill execution mode (default: 128)
+    exec.MaxSkillIterations = 128  // Skill execution mode (default: 128)
 }
 ```
 

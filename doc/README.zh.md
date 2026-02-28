@@ -1,5 +1,7 @@
 > [!NOTE]
-> 此 README 由 [SKILL](https://github.com/pardnchiu/skill-readme-generate) 生成，英文版請參閱 [這裡](./README.md)。
+> 此 README 由 [SKILL](https://github.com/pardnchiu/skill-readme-generate) 生成，英文版請參閱 [這裡](../README.md)。
+
+![cover](./cover.png)
 
 # go-agent-skills
 

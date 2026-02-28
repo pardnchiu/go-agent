@@ -1,6 +1,6 @@
 # go-agent-skills - Documentation
 
-> Back to [README](./README.md)
+> Back to [README](../README.md)
 
 ## Prerequisites
 

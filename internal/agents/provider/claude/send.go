@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"github.com/pardnchiu/go-agent-skills/internal/agents/exec"
-	atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
-	ttypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 	"github.com/pardnchiu/go-agent-skills/internal/utils"
 )
 
@@ -17,11 +17,11 @@ const (
 	maxTokens   = 16384
 )
 
-func (a *Agent) Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- atypes.Event, allowAll bool) error {
+func (a *Agent) Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- agentTypes.Event, allowAll bool) error {
 	return exec.Execute(ctx, a, a.workDir, skill, userInput, events, allowAll)
 }
 
-func (a *Agent) Send(ctx context.Context, messages []atypes.Message, tools []ttypes.Tool) (*atypes.Output, error) {
+func (a *Agent) Send(ctx context.Context, messages []agentTypes.Message, tools []toolTypes.Tool) (*agentTypes.Output, error) {
 	var systemPrompt string
 	var newMessages []map[string]any
 
@@ -64,7 +64,7 @@ func (a *Agent) Send(ctx context.Context, messages []atypes.Message, tools []tty
 	return a.convertToOutput(&result), nil
 }
 
-func (a *Agent) convertToMessage(message atypes.Message) map[string]any {
+func (a *Agent) convertToMessage(message agentTypes.Message) map[string]any {
 	if message.ToolCallID != "" {
 		return map[string]any{
 			"role": "user",
@@ -102,7 +102,7 @@ func (a *Agent) convertToMessage(message atypes.Message) map[string]any {
 	}
 }
 
-func (a *Agent) convertToTools(tools []ttypes.Tool) []map[string]any {
+func (a *Agent) convertToTools(tools []toolTypes.Tool) []map[string]any {
 	newTools := make([]map[string]any, len(tools))
 	for i, tool := range tools {
 		newTools[i] = map[string]any{
@@ -114,12 +114,12 @@ func (a *Agent) convertToTools(tools []ttypes.Tool) []map[string]any {
 	return newTools
 }
 
-func (a *Agent) convertToOutput(resp *Output) *atypes.Output {
-	output := &atypes.Output{
-		Choices: make([]atypes.OutputChoices, 1),
+func (a *Agent) convertToOutput(resp *Output) *agentTypes.Output {
+	output := &agentTypes.Output{
+		Choices: make([]agentTypes.OutputChoices, 1),
 	}
 
-	var toolCalls []atypes.ToolCall
+	var toolCalls []agentTypes.ToolCall
 	var textContent string
 
 	for _, item := range resp.Content {
@@ -135,7 +135,7 @@ func (a *Agent) convertToOutput(resp *Output) *atypes.Output {
 				arg = string(data)
 			}
 
-			toolCall := atypes.ToolCall{
+			toolCall := agentTypes.ToolCall{
 				ID:   item.ID,
 				Type: "function",
 			}
@@ -145,7 +145,7 @@ func (a *Agent) convertToOutput(resp *Output) *atypes.Output {
 		}
 	}
 
-	output.Choices[0].Message = atypes.Message{
+	output.Choices[0].Message = agentTypes.Message{
 		Role:      "assistant",
 		Content:   textContent,
 		ToolCalls: toolCalls,

@@ -1,4 +1,4 @@
-package types
+package agentTypes
 
 import "encoding/json"
 

@@ -1,14 +1,14 @@
-package types
+package agentTypes
 
 import (
 	"context"
 
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
-	ttypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 )
 
 type Agent interface {
-	Send(ctx context.Context, messages []Message, toolDefs []ttypes.Tool) (*Output, error)
+	Send(ctx context.Context, messages []Message, toolDefs []toolTypes.Tool) (*Output, error)
 	Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- Event, allowAll bool) error
 }
 

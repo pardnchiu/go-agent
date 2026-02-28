@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"strings"
 
-	atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
 	"github.com/pardnchiu/go-agent-skills/internal/tools"
-	"github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 )
 
-func toolCall(ctx context.Context, exec *types.Executor, choice atypes.OutputChoices, sessionData *atypes.AgentSession, events chan<- atypes.Event, allowAll bool, alreadyCall map[string]string) (*atypes.AgentSession, map[string]string, error) {
+func toolCall(ctx context.Context, exec *toolTypes.Executor, choice agentTypes.OutputChoices, sessionData *agentTypes.AgentSession, events chan<- agentTypes.Event, allowAll bool, alreadyCall map[string]string) (*agentTypes.AgentSession, map[string]string, error) {
 	sessionData.Messages = append(sessionData.Messages, choice.Message)
 
 	for _, tool := range choice.Message.ToolCalls {
@@ -20,7 +20,7 @@ func toolCall(ctx context.Context, exec *types.Executor, choice atypes.OutputCho
 
 		hash := fmt.Sprintf("%v|%v", toolName, toolArg)
 		if cached, ok := alreadyCall[hash]; ok && cached != "" {
-			sessionData.Messages = append(sessionData.Messages, atypes.Message{
+			sessionData.Messages = append(sessionData.Messages, agentTypes.Message{
 				Role:       "tool",
 				Content:    cached,
 				ToolCallID: tool.ID,
@@ -32,8 +32,8 @@ func toolCall(ctx context.Context, exec *types.Executor, choice atypes.OutputCho
 			toolName = toolName[:idx]
 		}
 
-		events <- atypes.Event{
-			Type:     atypes.EventToolCall,
+		events <- agentTypes.Event{
+			Type:     agentTypes.EventToolCall,
 			ToolName: toolName,
 			ToolArgs: tool.Function.Arguments,
 			ToolID:   tool.ID,
@@ -41,8 +41,8 @@ func toolCall(ctx context.Context, exec *types.Executor, choice atypes.OutputCho
 
 		if !allowAll {
 			replyCh := make(chan bool, 1)
-			events <- atypes.Event{
-				Type:     atypes.EventToolConfirm,
+			events <- agentTypes.Event{
+				Type:     agentTypes.EventToolConfirm,
 				ToolName: toolName,
 				ToolArgs: tool.Function.Arguments,
 				ToolID:   tool.ID,
@@ -50,17 +50,17 @@ func toolCall(ctx context.Context, exec *types.Executor, choice atypes.OutputCho
 			}
 			proceed := <-replyCh
 			if !proceed {
-				events <- atypes.Event{
-					Type:     atypes.EventToolSkipped,
+				events <- agentTypes.Event{
+					Type:     agentTypes.EventToolSkipped,
 					ToolName: toolName,
 					ToolID:   tool.ID,
 				}
-				sessionData.Tools = append(sessionData.Tools, atypes.Message{
+				sessionData.Tools = append(sessionData.Tools, agentTypes.Message{
 					Role:       "tool",
 					Content:    "Skipped by user",
 					ToolCallID: tool.ID,
 				})
-				sessionData.Messages = append(sessionData.Messages, atypes.Message{
+				sessionData.Messages = append(sessionData.Messages, agentTypes.Message{
 					Role:       "tool",
 					Content:    "Skipped by user",
 					ToolCallID: tool.ID,
@@ -77,18 +77,18 @@ func toolCall(ctx context.Context, exec *types.Executor, choice atypes.OutputCho
 		content := fmt.Sprintf("[%s] %s", toolName, result)
 		alreadyCall[hash] = content
 
-		events <- atypes.Event{
-			Type:     atypes.EventToolResult,
+		events <- agentTypes.Event{
+			Type:     agentTypes.EventToolResult,
 			ToolName: toolName,
 			ToolID:   tool.ID,
 			Result:   result,
 		}
-		sessionData.Tools = append(sessionData.Tools, atypes.Message{
+		sessionData.Tools = append(sessionData.Tools, agentTypes.Message{
 			Role:       "tool",
 			Content:    content,
 			ToolCallID: tool.ID,
 		})
-		sessionData.Messages = append(sessionData.Messages, atypes.Message{
+		sessionData.Messages = append(sessionData.Messages, agentTypes.Message{
 			Role:       "tool",
 			Content:    content,
 			ToolCallID: tool.ID,

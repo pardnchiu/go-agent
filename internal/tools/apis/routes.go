@@ -8,10 +8,10 @@ import (
 	"github.com/pardnchiu/go-agent-skills/internal/tools/apis/googleRSS"
 	"github.com/pardnchiu/go-agent-skills/internal/tools/apis/weatherReport"
 	"github.com/pardnchiu/go-agent-skills/internal/tools/apis/yahooFinance"
-	"github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 )
 
-func Routes(e *types.Executor, name string, args json.RawMessage) (string, error) {
+func Routes(e *toolTypes.Executor, name string, args json.RawMessage) (string, error) {
 	switch name {
 	case "send_http_request":
 		var params struct {

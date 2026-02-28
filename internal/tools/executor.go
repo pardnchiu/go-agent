@@ -13,7 +13,7 @@ import (
 	"github.com/pardnchiu/go-agent-skills/internal/tools/browser"
 	"github.com/pardnchiu/go-agent-skills/internal/tools/calculator"
 	"github.com/pardnchiu/go-agent-skills/internal/tools/file"
-	"github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 	"github.com/pardnchiu/go-agent-skills/internal/utils"
 )
 
@@ -23,8 +23,8 @@ var toolsMap []byte
 //go:embed embed/commands.json
 var allowCommand []byte
 
-func NewExecutor(workPath, sessionID string) (*types.Executor, error) {
-	var tools []types.Tool
+func NewExecutor(workPath, sessionID string) (*toolTypes.Executor, error) {
+	var tools []toolTypes.Tool
 	if err := json.Unmarshal(toolsMap, &tools); err != nil {
 		return nil, fmt.Errorf("json.Unmarshal: %w", err)
 	}
@@ -51,14 +51,14 @@ func NewExecutor(workPath, sessionID string) (*types.Executor, error) {
 		if err != nil {
 			continue
 		}
-		var t types.Tool
+		var t toolTypes.Tool
 		if err := json.Unmarshal(data, &t); err != nil {
 			continue
 		}
 		tools = append(tools, t)
 	}
 
-	return &types.Executor{
+	return &toolTypes.Executor{
 		WorkPath:       workPath,
 		SessionID:      sessionID,
 		AllowedCommand: allowedCommand,
@@ -87,7 +87,7 @@ func normalizeArgs(args json.RawMessage) json.RawMessage {
 	return args
 }
 
-func Execute(ctx context.Context, e *types.Executor, name string, args json.RawMessage) (string, error) {
+func Execute(ctx context.Context, e *toolTypes.Executor, name string, args json.RawMessage) (string, error) {
 	args = normalizeArgs(args)
 	// * get all api tools
 	if strings.HasPrefix(name, "api_") && e.APIToolbox != nil && e.APIToolbox.IsExist(name) {

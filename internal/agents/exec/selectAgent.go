@@ -9,17 +9,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
 	"github.com/pardnchiu/go-agent-skills/internal/utils"
 )
 
 //go:embed prompt/agentSelector.md
 var agentSelectorPrompt string
 
-func GetAgentEntries() []atypes.AgentEntry {
+func GetAgentEntries() []agentTypes.AgentEntry {
 	configDir, err := utils.GetConfigDir()
 	if err != nil {
-		return []atypes.AgentEntry{}
+		return []agentTypes.AgentEntry{}
 	}
 
 	for _, dir := range configDir.Dirs {
@@ -28,8 +28,8 @@ func GetAgentEntries() []atypes.AgentEntry {
 			continue
 		}
 		var cfg struct {
-			Models       []atypes.AgentEntry `json:"models"`
-			DefaultModel string              `json:"default_model"`
+			Models       []agentTypes.AgentEntry `json:"models"`
+			DefaultModel string                  `json:"default_model"`
 		}
 		if json.Unmarshal(data, &cfg) != nil || len(cfg.Models) == 0 {
 			continue
@@ -45,10 +45,10 @@ func GetAgentEntries() []atypes.AgentEntry {
 		}
 		return cfg.Models
 	}
-	return []atypes.AgentEntry{}
+	return []agentTypes.AgentEntry{}
 }
 
-func selectAgent(ctx context.Context, bot atypes.Agent, agentEntries []atypes.AgentEntry, userInput string) string {
+func selectAgent(ctx context.Context, bot agentTypes.Agent, agentEntries []agentTypes.AgentEntry, userInput string) string {
 	if len(agentEntries) == 0 {
 		return ""
 	}
@@ -63,7 +63,7 @@ func selectAgent(ctx context.Context, bot atypes.Agent, agentEntries []atypes.Ag
 		return ""
 	}
 
-	messages := []atypes.Message{
+	messages := []agentTypes.Message{
 		{Role: "system", Content: agentSelectorPrompt},
 		{
 			Role:    "user",

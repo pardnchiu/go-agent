@@ -1,4 +1,4 @@
-package types
+package toolTypes
 
 import (
 	"encoding/json"

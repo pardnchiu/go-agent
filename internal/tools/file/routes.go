@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 )
 
-func Routes(e *types.Executor, name string, args json.RawMessage) (string, error) {
+func Routes(e *toolTypes.Executor, name string, args json.RawMessage) (string, error) {
 	switch name {
 	case "read_file":
 		var params struct {

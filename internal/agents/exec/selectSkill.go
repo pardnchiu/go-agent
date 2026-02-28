@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"strings"
 
-	atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
 )
 
 //go:embed prompt/skillSelector.md
 var skillSelectorPrompt string
 
-func selectSkill(ctx context.Context, bot atypes.Agent, scanner *skill.Scanner, userInput string) *skill.Skill {
+func selectSkill(ctx context.Context, bot agentTypes.Agent, scanner *skill.Scanner, userInput string) *skill.Skill {
 	skills := scanner.List()
 	if len(skills) == 0 {
 		return nil
@@ -25,7 +25,7 @@ func selectSkill(ctx context.Context, bot atypes.Agent, scanner *skill.Scanner, 
 		sb.WriteString(fmt.Sprintf("- %s: %s\n", skill, s.Description))
 	}
 
-	messages := []atypes.Message{
+	messages := []agentTypes.Message{
 		{Role: "system", Content: skillSelectorPrompt},
 		{
 			Role:    "user",

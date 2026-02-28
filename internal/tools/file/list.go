@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 )
 
-func list(e *types.Executor, path string, recursive bool) (string, error) {
+func list(e *toolTypes.Executor, path string, recursive bool) (string, error) {
 	fullPath := getFullPath(e, path)
 
 	var files []string
@@ -26,7 +26,7 @@ func list(e *types.Executor, path string, recursive bool) (string, error) {
 	return strings.Join(files, "\n") + "\n", nil
 }
 
-func walkFiles(e *types.Executor, root string) ([]string, error) {
+func walkFiles(e *toolTypes.Executor, root string) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -68,7 +68,7 @@ func walkFiles(e *types.Executor, root string) ([]string, error) {
 	return files, nil
 }
 
-func listDir(e *types.Executor, path string) ([]string, error) {
+func listDir(e *toolTypes.Executor, path string) ([]string, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return nil, fmt.Errorf("list directory — %w", err)

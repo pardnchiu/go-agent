@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 )
 
-func write(e *types.Executor, path, content string) (string, error) {
+func write(e *toolTypes.Executor, path, content string) (string, error) {
 	if content == "" {
 		return "", fmt.Errorf("refused to write empty content to file (%s)", path)
 	}

@@ -20,7 +20,7 @@ import (
 	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/gemini"
 	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/nvidia"
 	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/openai"
-	atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
 
 	"github.com/joho/godotenv"
@@ -89,7 +89,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		if err := runWithEvents(ctx, cancel, func(ch chan<- atypes.Event) error {
+		if err := runWithEvents(ctx, cancel, func(ch chan<- agentTypes.Event) error {
 			return exec.Run(ctx, selectorBot, agentRegistry, scanner, userInput, ch, allowAll)
 		}); err != nil && ctx.Err() == nil {
 			slog.Error("failed to execute", slog.String("error", err.Error()))
@@ -100,7 +100,7 @@ func main() {
 
 }
 
-func printTool(ev atypes.Event) {
+func printTool(ev agentTypes.Event) {
 	var args map[string]any
 	json.Unmarshal([]byte(ev.ToolArgs), &args)
 
@@ -138,15 +138,15 @@ func printTool(ev atypes.Event) {
 	}
 }
 
-func printContent(ev atypes.Event) {
+func printContent(ev agentTypes.Event) {
 	fmt.Print("\033[90m──────────────────────────────────────────────────\n")
 	fmt.Printf("%s\n", strings.TrimSpace(ev.Result))
 	fmt.Print("──────────────────────────────────────────────────\033[0m\n")
 }
 
-func runWithEvents(_ context.Context, cancel context.CancelFunc, fn func(chan<- atypes.Event) error) error {
+func runWithEvents(_ context.Context, cancel context.CancelFunc, fn func(chan<- agentTypes.Event) error) error {
 	start := time.Now()
-	ch := make(chan atypes.Event, 16)
+	ch := make(chan agentTypes.Event, 16)
 	var execErr error
 
 	go func() {
@@ -156,13 +156,13 @@ func runWithEvents(_ context.Context, cancel context.CancelFunc, fn func(chan<- 
 
 	for ev := range ch {
 		switch ev.Type {
-		case atypes.EventText:
+		case agentTypes.EventText:
 			fmt.Printf("[*] %s\n", ev.Text)
 
-		case atypes.EventToolCall:
+		case agentTypes.EventToolCall:
 			printTool(ev)
 
-		case atypes.EventToolConfirm:
+		case agentTypes.EventToolConfirm:
 			prompt := promptui.Select{
 				Label:        fmt.Sprintf("Run %s?", ev.ToolName),
 				Items:        []string{"Yes", "Skip", "Stop"},
@@ -181,20 +181,20 @@ func runWithEvents(_ context.Context, cancel context.CancelFunc, fn func(chan<- 
 				ev.ReplyCh <- true
 			}
 
-		case atypes.EventToolSkipped:
+		case agentTypes.EventToolSkipped:
 			fmt.Printf("[x] Skipped: %s\n", ev.ToolName)
 
-		case atypes.EventToolResult:
+		case agentTypes.EventToolResult:
 			if ev.ToolName == "write_file" {
 				printContent(ev)
 			}
 
-		case atypes.EventError:
+		case agentTypes.EventError:
 			if ev.Err != nil {
 				fmt.Fprintf(os.Stderr, "[!] Error: %v\n", ev.Err)
 			}
 
-		case atypes.EventDone:
+		case agentTypes.EventDone:
 			fmt.Printf(" (%s)", time.Since(start).Round(time.Millisecond))
 			fmt.Println()
 		}
@@ -203,14 +203,14 @@ func runWithEvents(_ context.Context, cancel context.CancelFunc, fn func(chan<- 
 	return execErr
 }
 
-func getAgentRegistry() atypes.AgentRegistry {
-	newFn := map[string]func(string) (atypes.Agent, error){
-		"copilot": func(m string) (atypes.Agent, error) { return copilot.New(m) },
-		"openai":  func(m string) (atypes.Agent, error) { return openai.New(m) },
-		"compat":  func(m string) (atypes.Agent, error) { return compat.New(m) },
-		"claude":  func(m string) (atypes.Agent, error) { return claude.New(m) },
-		"gemini":  func(m string) (atypes.Agent, error) { return gemini.New(m) },
-		"nvidia":  func(m string) (atypes.Agent, error) { return nvidia.New(m) },
+func getAgentRegistry() agentTypes.AgentRegistry {
+	newFn := map[string]func(string) (agentTypes.Agent, error){
+		"copilot": func(m string) (agentTypes.Agent, error) { return copilot.New(m) },
+		"openai":  func(m string) (agentTypes.Agent, error) { return openai.New(m) },
+		"compat":  func(m string) (agentTypes.Agent, error) { return compat.New(m) },
+		"claude":  func(m string) (agentTypes.Agent, error) { return claude.New(m) },
+		"gemini":  func(m string) (agentTypes.Agent, error) { return gemini.New(m) },
+		"nvidia":  func(m string) (agentTypes.Agent, error) { return nvidia.New(m) },
 	}
 
 	agentEntries := exec.GetAgentEntries()
@@ -218,9 +218,9 @@ func getAgentRegistry() atypes.AgentRegistry {
 	// registry := make(map[string]exec.Agent, len(agentEntries))
 	// entries := make([]exec.AgentEntryData, 0, len(agentEntries))
 
-	agentRegistry := atypes.AgentRegistry{
-		Registry: make(map[string]atypes.Agent, len(agentEntries)),
-		Entries:  make([]atypes.AgentEntry, 0, len(agentEntries)),
+	agentRegistry := agentTypes.AgentRegistry{
+		Registry: make(map[string]agentTypes.Agent, len(agentEntries)),
+		Entries:  make([]agentTypes.AgentEntry, 0, len(agentEntries)),
 	}
 	for _, e := range agentEntries {
 		provider := strings.SplitN(e.Name, "@", 2)[0]

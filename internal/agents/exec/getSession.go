@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
 	"github.com/pardnchiu/go-agent-skills/internal/utils"
 )
 
@@ -19,14 +19,14 @@ type IndexData struct {
 	SessionID string `json:"session_id"`
 }
 
-func getSession(prompt string, userInput string) (*atypes.AgentSession, string, error) {
+func getSession(prompt string, userInput string) (*agentTypes.AgentSession, string, error) {
 	now := fmt.Sprintf("%d", time.Now().Unix())
-	input := atypes.AgentSession{
-		Tools: []atypes.Message{},
-		Messages: []atypes.Message{
+	input := agentTypes.AgentSession{
+		Tools: []agentTypes.Message{},
+		Messages: []agentTypes.Message{
 			{Role: "system", Content: prompt},
 		},
-		Histories: []atypes.Message{},
+		Histories: []agentTypes.Message{},
 	}
 
 	configDir, err := utils.GetConfigDir("sessions")
@@ -63,21 +63,21 @@ func getSession(prompt string, userInput string) (*atypes.AgentSession, string, 
 		}
 
 		if histData, err := os.ReadFile(filepath.Join(configDir.Home, sessionID, "history.json")); err == nil {
-			var oldHistory []atypes.Message
+			var oldHistory []agentTypes.Message
 			if err := json.Unmarshal(histData, &oldHistory); err == nil {
 				input.Histories = oldHistory
 			}
-			input.Histories = append(input.Histories, atypes.Message{Role: "user", Content: fmt.Sprintf("ts:%s\n%s", now, userInput)})
+			input.Histories = append(input.Histories, agentTypes.Message{Role: "user", Content: fmt.Sprintf("ts:%s\n%s", now, userInput)})
 
 			if summary != "" {
-				input.Messages = append(input.Messages, atypes.Message{Role: "system", Content: summary})
+				input.Messages = append(input.Messages, agentTypes.Message{Role: "system", Content: summary})
 			}
 			recentHistory := oldHistory
 			if len(recentHistory) > 4 {
 				recentHistory = recentHistory[len(recentHistory)-4:]
 			}
 			input.Messages = append(input.Messages, recentHistory...)
-			input.Messages = append(input.Messages, atypes.Message{Role: "user", Content: fmt.Sprintf("ts:%s\n%s", now, userInput)})
+			input.Messages = append(input.Messages, agentTypes.Message{Role: "user", Content: fmt.Sprintf("ts:%s\n%s", now, userInput)})
 		}
 
 	case os.IsNotExist(readErr):
@@ -87,8 +87,8 @@ func getSession(prompt string, userInput string) (*atypes.AgentSession, string, 
 			return nil, "", fmt.Errorf("newSessionID: %w", genErr)
 		}
 
-		input.Histories = append(input.Histories, atypes.Message{Role: "user", Content: fmt.Sprintf("ts:%s\n%s", now, userInput)})
-		input.Messages = append(input.Messages, atypes.Message{Role: "user", Content: fmt.Sprintf("ts:%s\n%s", now, userInput)})
+		input.Histories = append(input.Histories, agentTypes.Message{Role: "user", Content: fmt.Sprintf("ts:%s\n%s", now, userInput)})
+		input.Messages = append(input.Messages, agentTypes.Message{Role: "user", Content: fmt.Sprintf("ts:%s\n%s", now, userInput)})
 
 		indexDataBytes, err := json.Marshal(IndexData{SessionID: sessionID})
 		if err != nil {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
 )
 
@@ -24,7 +24,7 @@ var (
 	MaxSkillIterations = 128
 )
 
-func Run(ctx context.Context, bot atypes.Agent, registry atypes.AgentRegistry, scanner *skill.Scanner, userInput string, events chan<- atypes.Event, allowAll bool) error {
+func Run(ctx context.Context, bot agentTypes.Agent, registry agentTypes.AgentRegistry, scanner *skill.Scanner, userInput string, events chan<- agentTypes.Event, allowAll bool) error {
 	workDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("os.Getwd: %w", err)
@@ -32,14 +32,14 @@ func Run(ctx context.Context, bot atypes.Agent, registry atypes.AgentRegistry, s
 
 	matchedSkill := selectSkill(ctx, bot, scanner, userInput)
 	if matchedSkill != nil {
-		events <- atypes.Event{Type: atypes.EventText, Text: fmt.Sprintf("Skill: %s", matchedSkill.Name)}
+		events <- agentTypes.Event{Type: agentTypes.EventText, Text: fmt.Sprintf("Skill: %s", matchedSkill.Name)}
 	}
 
 	agent := registry.Fallback
 	if chosen := selectAgent(ctx, bot, registry.Entries, userInput); chosen != "" {
 		if a, ok := registry.Registry[chosen]; ok {
 			agent = a
-			events <- atypes.Event{Type: atypes.EventText, Text: chosen}
+			events <- agentTypes.Event{Type: agentTypes.EventText, Text: chosen}
 		}
 	}
 

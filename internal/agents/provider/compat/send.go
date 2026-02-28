@@ -5,17 +5,17 @@ import (
 	"fmt"
 
 	"github.com/pardnchiu/go-agent-skills/internal/agents/exec"
-	atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
-	ttypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 	"github.com/pardnchiu/go-agent-skills/internal/utils"
 )
 
-func (a *Agent) Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- atypes.Event, allowAll bool) error {
+func (a *Agent) Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- agentTypes.Event, allowAll bool) error {
 	return exec.Execute(ctx, a, a.workDir, skill, userInput, events, allowAll)
 }
 
-func (a *Agent) Send(ctx context.Context, messages []atypes.Message, tools []ttypes.Tool) (*atypes.Output, error) {
+func (a *Agent) Send(ctx context.Context, messages []agentTypes.Message, tools []toolTypes.Tool) (*agentTypes.Output, error) {
 	chatAPI := a.baseURL + "/v1/chat/completions"
 
 	headers := map[string]string{
@@ -25,7 +25,7 @@ func (a *Agent) Send(ctx context.Context, messages []atypes.Message, tools []tty
 		headers["Authorization"] = "Bearer " + a.apiKey
 	}
 
-	result, _, err := utils.POST[atypes.Output](ctx, a.httpClient, chatAPI, headers, map[string]any{
+	result, _, err := utils.POST[agentTypes.Output](ctx, a.httpClient, chatAPI, headers, map[string]any{
 		"model":    a.model,
 		"messages": messages,
 		"tools":    tools,

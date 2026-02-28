@@ -10,13 +10,13 @@ import (
 	"strings"
 	"time"
 
-	atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
 	"github.com/pardnchiu/go-agent-skills/internal/tools"
 	"github.com/pardnchiu/go-agent-skills/internal/utils"
 )
 
-func Execute(ctx context.Context, agent atypes.Agent, workDir string, skill *skill.Skill, userInput string, events chan<- atypes.Event, allowAll bool) error {
+func Execute(ctx context.Context, agent agentTypes.Agent, workDir string, skill *skill.Skill, userInput string, events chan<- agentTypes.Event, allowAll bool) error {
 	// if skill is empty, then treat as no skill
 	if skill != nil && skill.Content == "" {
 		skill = nil
@@ -55,8 +55,8 @@ func Execute(ctx context.Context, agent atypes.Agent, workDir string, skill *ski
 		if len(resp.Choices) == 0 {
 			emptyCount++
 			if emptyCount >= maxEmpty {
-				events <- atypes.Event{Type: atypes.EventText, Text: "工具無法取得資料，請稍後再試或改用其他方式查詢。"}
-				events <- atypes.Event{Type: atypes.EventDone}
+				events <- agentTypes.Event{Type: agentTypes.EventText, Text: "工具無法取得資料，請稍後再試或改用其他方式查詢。"}
+				events <- agentTypes.Event{Type: agentTypes.EventDone}
 				return nil
 			}
 			continue
@@ -80,7 +80,7 @@ func Execute(ctx context.Context, agent atypes.Agent, workDir string, skill *ski
 			}
 			cleaned := extractSummary(configDir, sessionID, text)
 
-			events <- atypes.Event{Type: atypes.EventText, Text: cleaned}
+			events <- agentTypes.Event{Type: agentTypes.EventText, Text: cleaned}
 
 			choice.Message.Content = fmt.Sprintf("ts:%d\n%s", time.Now().Unix(), cleaned)
 
@@ -92,12 +92,12 @@ func Execute(ctx context.Context, agent atypes.Agent, workDir string, skill *ski
 					slog.String("error", err.Error()))
 			}
 		case nil:
-			events <- atypes.Event{Type: atypes.EventText, Text: "工具無法取得資料，請稍後再試或改用其他方式查詢。"}
+			events <- agentTypes.Event{Type: agentTypes.EventText, Text: "工具無法取得資料，請稍後再試或改用其他方式查詢。"}
 		default:
 			return fmt.Errorf("unexpected content type: %T", choice.Message.Content)
 		}
 
-		events <- atypes.Event{Type: atypes.EventDone}
+		events <- agentTypes.Event{Type: agentTypes.EventDone}
 
 		if len(sessionData.Tools) > 0 {
 			now := time.Now()
@@ -115,7 +115,7 @@ func Execute(ctx context.Context, agent atypes.Agent, workDir string, skill *ski
 		return nil
 	}
 
-	summaryMessages := append(sessionData.Messages, atypes.Message{
+	summaryMessages := append(sessionData.Messages, agentTypes.Message{
 		Role:    "user",
 		Content: "請根據以上工具查詢結果，整理並總結回答原始問題。",
 	})
@@ -123,14 +123,14 @@ func Execute(ctx context.Context, agent atypes.Agent, workDir string, skill *ski
 	if err == nil && len(resp.Choices) > 0 {
 		if text, ok := resp.Choices[0].Message.Content.(string); ok && text != "" {
 			cleaned := extractSummary(configDir, sessionID, text)
-			events <- atypes.Event{Type: atypes.EventText, Text: cleaned}
-			events <- atypes.Event{Type: atypes.EventDone}
+			events <- agentTypes.Event{Type: agentTypes.EventText, Text: cleaned}
+			events <- agentTypes.Event{Type: agentTypes.EventDone}
 			return nil
 		}
 	}
 
-	events <- atypes.Event{Type: atypes.EventText, Text: "工具無法取得資料，請稍後再試或改用其他方式查詢。"}
-	events <- atypes.Event{Type: atypes.EventDone}
+	events <- agentTypes.Event{Type: agentTypes.EventText, Text: "工具無法取得資料，請稍後再試或改用其他方式查詢。"}
+	events <- agentTypes.Event{Type: agentTypes.EventDone}
 	return nil
 }
 

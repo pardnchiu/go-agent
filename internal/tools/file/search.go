@@ -8,10 +8,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 )
 
-func search(e *types.Executor, pattern, filePattern string) (string, error) {
+func search(e *toolTypes.Executor, pattern, filePattern string) (string, error) {
 	re, err := regexp.Compile(pattern)
 	if err != nil {
 		return "", fmt.Errorf("failed to compile regex pattern (%s): %w", pattern, err)

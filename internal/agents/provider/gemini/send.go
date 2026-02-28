@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"github.com/pardnchiu/go-agent-skills/internal/agents/exec"
-	atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
 	"github.com/pardnchiu/go-agent-skills/internal/skill"
-	ttypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 	"github.com/pardnchiu/go-agent-skills/internal/utils"
 )
 
@@ -16,11 +16,11 @@ const (
 	baseAPI = "https://generativelanguage.googleapis.com/v1beta/models/"
 )
 
-func (a *Agent) Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- atypes.Event, allowAll bool) error {
+func (a *Agent) Execute(ctx context.Context, skill *skill.Skill, userInput string, events chan<- agentTypes.Event, allowAll bool) error {
 	return exec.Execute(ctx, a, a.workDir, skill, userInput, events, allowAll)
 }
 
-func (a *Agent) Send(ctx context.Context, messages []atypes.Message, tools []ttypes.Tool) (*atypes.Output, error) {
+func (a *Agent) Send(ctx context.Context, messages []agentTypes.Message, tools []toolTypes.Tool) (*agentTypes.Output, error) {
 	var systemPrompt string
 	var newMessages []Content
 
@@ -50,7 +50,7 @@ func (a *Agent) Send(ctx context.Context, messages []atypes.Message, tools []tty
 	return a.convertToOutput(&result), nil
 }
 
-func (a *Agent) convertToContent(message atypes.Message) Content {
+func (a *Agent) convertToContent(message agentTypes.Message) Content {
 	content := Content{}
 	if message.ToolCallID != "" {
 		content.Role = "function"
@@ -98,7 +98,7 @@ func (a *Agent) convertToContent(message atypes.Message) Content {
 	return content
 }
 
-func (a *Agent) convertToTools(tools []ttypes.Tool) []map[string]any {
+func (a *Agent) convertToTools(tools []toolTypes.Tool) []map[string]any {
 	newTools := make([]map[string]any, len(tools))
 	for i, tool := range tools {
 		var params map[string]any
@@ -134,9 +134,9 @@ func (a *Agent) generateRequestBody(messages []Content, prompt string, newTools 
 	return body
 }
 
-func (a *Agent) convertToOutput(resp *Output) *atypes.Output {
-	output := &atypes.Output{
-		Choices: make([]atypes.OutputChoices, 1),
+func (a *Agent) convertToOutput(resp *Output) *agentTypes.Output {
+	output := &agentTypes.Output{
+		Choices: make([]agentTypes.OutputChoices, 1),
 	}
 
 	if len(resp.Candidates) == 0 {
@@ -144,7 +144,7 @@ func (a *Agent) convertToOutput(resp *Output) *atypes.Output {
 	}
 
 	candidate := resp.Candidates[0]
-	var toolCalls []atypes.ToolCall
+	var toolCalls []agentTypes.ToolCall
 	var textContent string
 
 	for _, part := range candidate.Content.Parts {
@@ -160,7 +160,7 @@ func (a *Agent) convertToOutput(resp *Output) *atypes.Output {
 				args = string(data)
 			}
 
-			toolCall := atypes.ToolCall{
+			toolCall := agentTypes.ToolCall{
 				ID:   part.FunctionCall.Name,
 				Type: "function",
 			}
@@ -170,7 +170,7 @@ func (a *Agent) convertToOutput(resp *Output) *atypes.Output {
 		}
 	}
 
-	output.Choices[0].Message = atypes.Message{
+	output.Choices[0].Message = agentTypes.Message{
 		Role:      "assistant",
 		Content:   textContent,
 		ToolCalls: toolCalls,

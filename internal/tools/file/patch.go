@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
 )
 
-func patch(e *types.Executor, path, oldString, newString string) (string, error) {
+func patch(e *toolTypes.Executor, path, oldString, newString string) (string, error) {
 	fullPath := getFullPath(e, path)
 
 	if isExclude(e, fullPath) {

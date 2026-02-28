@@ -1,4 +1,4 @@
-module github.com/pardnchiu/go-agent-skills
+module github.com/pardnchiu/agenvoy
 
 go 1.25.1
 

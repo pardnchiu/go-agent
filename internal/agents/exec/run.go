@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
-	"github.com/pardnchiu/go-agent-skills/internal/skill"
+	agentTypes "github.com/pardnchiu/agenvoy/internal/agents/types"
+	"github.com/pardnchiu/agenvoy/internal/skill"
 )
 
 func Run(ctx context.Context, bot agentTypes.Agent, registry agentTypes.AgentRegistry, scanner *skill.Scanner, userInput string, events chan<- agentTypes.Event, allowAll bool) error {

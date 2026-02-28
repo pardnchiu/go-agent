@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pardnchiu/go-agent-skills/internal/utils"
+	"github.com/pardnchiu/agenvoy/internal/utils"
 )
 
 type Token struct {

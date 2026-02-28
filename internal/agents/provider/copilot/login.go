@@ -12,7 +12,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/pardnchiu/go-agent-skills/internal/utils"
+	"github.com/pardnchiu/agenvoy/internal/utils"
 )
 
 const (

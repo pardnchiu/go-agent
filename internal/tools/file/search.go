@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/agenvoy/internal/tools/types"
 )
 
 func search(e *toolTypes.Executor, pattern, filePattern string) (string, error) {

@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/pardnchiu/go-agent-skills/internal/tools/apiAdapter"
-	"github.com/pardnchiu/go-agent-skills/internal/tools/apis/googleRSS"
-	"github.com/pardnchiu/go-agent-skills/internal/tools/apis/weatherReport"
-	"github.com/pardnchiu/go-agent-skills/internal/tools/apis/yahooFinance"
-	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	"github.com/pardnchiu/agenvoy/internal/tools/apiAdapter"
+	"github.com/pardnchiu/agenvoy/internal/tools/apis/googleRSS"
+	"github.com/pardnchiu/agenvoy/internal/tools/apis/weatherReport"
+	"github.com/pardnchiu/agenvoy/internal/tools/apis/yahooFinance"
+	toolTypes "github.com/pardnchiu/agenvoy/internal/tools/types"
 )
 
 func Routes(e *toolTypes.Executor, name string, args json.RawMessage) (string, error) {

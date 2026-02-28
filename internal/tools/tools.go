@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/agenvoy/internal/tools/types"
 )
 
 var (
@@ -17,7 +17,7 @@ var (
 // disallowed = regexp.MustCompile(`[;&|` + "`" + `$(){}!<>\\]`)
 )
 
-func runCommand(ctx context.Context, e *types.Executor, command string) (string, error) {
+func runCommand(ctx context.Context, e *toolTypes.Executor, command string) (string, error) {
 	command = strings.TrimSpace(command)
 	if command == "" {
 		return "", fmt.Errorf("failed to run command: command is empty")
@@ -74,7 +74,7 @@ func runCommand(ctx context.Context, e *types.Executor, command string) (string,
 	return string(output), nil
 }
 
-func moveToTrash(ctx context.Context, e *types.Executor, args []string) (string, error) {
+func moveToTrash(ctx context.Context, e *toolTypes.Executor, args []string) (string, error) {
 	trashPath := filepath.Join(e.WorkPath, ".Trash")
 	if err := os.MkdirAll(trashPath, 0755); err != nil {
 		return "", fmt.Errorf("os.MkdirAll .Trash: %w", err)

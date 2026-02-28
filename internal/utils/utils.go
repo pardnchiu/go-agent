@@ -128,7 +128,7 @@ func POST[T any](ctx context.Context, client *http.Client, api string, header ma
 }
 
 const (
-	projectName = "go-agent-skills"
+	projectName = "agenvoy"
 )
 
 type ConfigDirData struct {

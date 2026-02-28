@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/agenvoy/internal/tools/types"
 )
 
 func patch(e *toolTypes.Executor, path, oldString, newString string) (string, error) {

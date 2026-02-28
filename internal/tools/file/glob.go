@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/agenvoy/internal/tools/types"
 )
 
 func glob(e *toolTypes.Executor, pattern string) (string, error) {

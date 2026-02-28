@@ -3,14 +3,14 @@
 
 ![cover](./doc/cover.png)
 
-# go-agent-skills
+# Agenvoy
 
-[![pkg](https://pkg.go.dev/badge/github.com/pardnchiu/go-agent-skills.svg)](https://pkg.go.dev/github.com/pardnchiu/go-agent-skills)
-[![card](https://goreportcard.com/badge/github.com/pardnchiu/go-agent-skills)](https://goreportcard.com/report/github.com/pardnchiu/go-agent-skills)
-[![license](https://img.shields.io/github/license/pardnchiu/go-agent-skills)](LICENSE)
-[![version](https://img.shields.io/github/v/tag/pardnchiu/go-agent-skills?label=release)](https://github.com/pardnchiu/go-agent-skills/releases)
+[![pkg](https://pkg.go.dev/badge/github.com/pardnchiu/agenvoy.svg)](https://pkg.go.dev/github.com/pardnchiu/agenvoy)
+[![card](https://goreportcard.com/badge/github.com/pardnchiu/agenvoy)](https://goreportcard.com/report/github.com/pardnchiu/agenvoy)
+[![license](https://img.shields.io/github/license/pardnchiu/agenvoy)](LICENSE)
+[![version](https://img.shields.io/github/v/tag/pardnchiu/agenvoy?label=release)](https://github.com/pardnchiu/agenvoy/releases)
 
-> A Go agentic framework with summary memory, a dual-layer routing execution engine, and zero-code API tool mounting
+> Intelligent skill and agent selection, cross-turn summary memory, and zero-code REST API tool mounting
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@
 
 ## Features
 
-> `go install github.com/pardnchiu/go-agent-skills/cmd/cli@latest` · [Documentation](./doc/doc.md)
+> `go install github.com/pardnchiu/agenvoy/cmd/cli@latest` · [Documentation](./doc/doc.md)
 
 ### Cross-Turn Summary Memory
 
@@ -57,7 +57,7 @@ graph TB
 ## File Structure
 
 ```
-go-agent-skills/
+agenvoy/
 ├── cmd/
 │   └── cli/
 │       ├── main.go                  # CLI entry point
@@ -98,7 +98,7 @@ go-agent-skills/
 
 ## License
 
-This project is licensed under the [MIT LICENSE](LICENSE).
+This project is licensed under the [AGPL-3.0 LICENSE](LICENSE).
 
 ## Author
 
@@ -114,7 +114,7 @@ This project is licensed under the [MIT LICENSE](LICENSE).
 
 ## Stars
 
-[![Star](https://api.star-history.com/svg?repos=pardnchiu/go-agent-skills&type=Date)](https://www.star-history.com/#pardnchiu/go-agent-skills&Date)
+[![Star](https://api.star-history.com/svg?repos=pardnchiu/agenvoy&type=Date)](https://www.star-history.com/#pardnchiu/agenvoy&Date)
 
 ***
 

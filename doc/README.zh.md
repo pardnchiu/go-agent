@@ -3,14 +3,14 @@
 
 ![cover](./cover.png)
 
-# go-agent-skills
+# Agenvoy
 
-[![pkg](https://pkg.go.dev/badge/github.com/pardnchiu/go-agent-skills.svg)](https://pkg.go.dev/github.com/pardnchiu/go-agent-skills)
-[![card](https://goreportcard.com/badge/github.com/pardnchiu/go-agent-skills)](https://goreportcard.com/report/github.com/pardnchiu/go-agent-skills)
-[![license](https://img.shields.io/github/license/pardnchiu/go-agent-skills)](LICENSE)
-[![version](https://img.shields.io/github/v/tag/pardnchiu/go-agent-skills?label=release)](https://github.com/pardnchiu/go-agent-skills/releases)
+[![pkg](https://pkg.go.dev/badge/github.com/pardnchiu/agenvoy.svg)](https://pkg.go.dev/github.com/pardnchiu/agenvoy)
+[![card](https://goreportcard.com/badge/github.com/pardnchiu/agenvoy)](https://goreportcard.com/report/github.com/pardnchiu/agenvoy)
+[![license](https://img.shields.io/github/license/pardnchiu/agenvoy)](LICENSE)
+[![version](https://img.shields.io/github/v/tag/pardnchiu/agenvoy?label=release)](https://github.com/pardnchiu/agenvoy/releases)
 
-> 具備概要記憶、雙層路由執行引擎與零程式碼 API 工具掛載的 Go Agentic 框架
+> 內建 Skill 與 Agent 智能路由、跨輪次概要記憶，支援零程式碼掛載任意 REST API 工具
 
 ## 目錄
 
@@ -23,7 +23,7 @@
 
 ## 功能特點
 
-> `go install github.com/pardnchiu/go-agent-skills/cmd/cli@latest` · [完整文件](./doc.zh.md)
+> `go install github.com/pardnchiu/agenvoy/cmd/cli@latest` · [完整文件](./doc.zh.md)
 
 ### 跨輪次概要記憶
 
@@ -57,7 +57,7 @@ graph TB
 ## 檔案結構
 
 ```
-go-agent-skills/
+agenvoy/
 ├── cmd/
 │   └── cli/
 │       ├── main.go                  # CLI 進入點
@@ -98,7 +98,7 @@ go-agent-skills/
 
 ## 授權
 
-本專案採用 [MIT LICENSE](LICENSE)。
+本專案採用 [AGPL-3.0 LICENSE](LICENSE)。
 
 ## Author
 
@@ -114,7 +114,7 @@ go-agent-skills/
 
 ## Stars
 
-[![Star](https://api.star-history.com/svg?repos=pardnchiu/go-agent-skills&type=Date)](https://www.star-history.com/#pardnchiu/go-agent-skills&Date)
+[![Star](https://api.star-history.com/svg?repos=pardnchiu/agenvoy&type=Date)](https://www.star-history.com/#pardnchiu/agenvoy&Date)
 
 ***
 

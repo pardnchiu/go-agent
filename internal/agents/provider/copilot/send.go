@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pardnchiu/go-agent-skills/internal/agents/exec"
-	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
-	"github.com/pardnchiu/go-agent-skills/internal/skill"
-	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
-	"github.com/pardnchiu/go-agent-skills/internal/utils"
+	"github.com/pardnchiu/agenvoy/internal/agents/exec"
+	agentTypes "github.com/pardnchiu/agenvoy/internal/agents/types"
+	"github.com/pardnchiu/agenvoy/internal/skill"
+	toolTypes "github.com/pardnchiu/agenvoy/internal/tools/types"
+	"github.com/pardnchiu/agenvoy/internal/utils"
 )
 
 const (

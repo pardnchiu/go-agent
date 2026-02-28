@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/agenvoy/internal/tools/types"
 )
 
 func write(e *toolTypes.Executor, path, content string) (string, error) {

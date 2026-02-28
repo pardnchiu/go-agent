@@ -3,7 +3,7 @@ package toolTypes
 import (
 	"encoding/json"
 
-	"github.com/pardnchiu/go-agent-skills/internal/tools/apiAdapter"
+	"github.com/pardnchiu/agenvoy/internal/tools/apiAdapter"
 )
 
 type Executor struct {

@@ -1,4 +1,4 @@
-# go-agent-skills - 技術文件
+# agenvoy - 技術文件
 
 > 返回 [README](./README.zh.md)
 
@@ -19,21 +19,21 @@
 ### 使用 go install
 
 ```bash
-go install github.com/pardnchiu/go-agent-skills/cmd/cli@latest
+go install github.com/pardnchiu/agenvoy/cmd/cli@latest
 ```
 
 ### 從原始碼建置
 
 ```bash
-git clone https://github.com/pardnchiu/go-agent-skills.git
-cd go-agent-skills
+git clone https://github.com/pardnchiu/agenvoy.git
+cd agenvoy
 go build -o agent-skills ./cmd/cli
 ```
 
 ### 作為函式庫引用
 
 ```bash
-go get github.com/pardnchiu/go-agent-skills
+go get github.com/pardnchiu/agenvoy
 ```
 
 ## 設定
@@ -203,11 +203,11 @@ import (
     "context"
     "fmt"
 
-    "github.com/pardnchiu/go-agent-skills/internal/agents/exec"
-    "github.com/pardnchiu/go-agent-skills/internal/agents/provider/claude"
-    "github.com/pardnchiu/go-agent-skills/internal/agents/provider/openai"
-    atypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
-    "github.com/pardnchiu/go-agent-skills/internal/skill"
+    "github.com/pardnchiu/agenvoy/internal/agents/exec"
+    "github.com/pardnchiu/agenvoy/internal/agents/provider/claude"
+    "github.com/pardnchiu/agenvoy/internal/agents/provider/openai"
+    atypes "github.com/pardnchiu/agenvoy/internal/agents/types"
+    "github.com/pardnchiu/agenvoy/internal/skill"
 )
 
 func main() {
@@ -263,7 +263,7 @@ func main() {
 ### 調整迭代上限
 
 ```go
-import "github.com/pardnchiu/go-agent-skills/internal/agents/exec"
+import "github.com/pardnchiu/agenvoy/internal/agents/exec"
 
 func init() {
     exec.MaxToolIterations  = 16  // 一般對話模式（預設 8）

@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
-	"github.com/pardnchiu/go-agent-skills/internal/utils"
+	agentTypes "github.com/pardnchiu/agenvoy/internal/agents/types"
+	"github.com/pardnchiu/agenvoy/internal/utils"
 )
 
 //go:embed prompt/agentSelector.md

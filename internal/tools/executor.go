@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pardnchiu/go-agent-skills/internal/tools/apiAdapter"
-	"github.com/pardnchiu/go-agent-skills/internal/tools/apis"
-	"github.com/pardnchiu/go-agent-skills/internal/tools/apis/searchWeb"
-	"github.com/pardnchiu/go-agent-skills/internal/tools/browser"
-	"github.com/pardnchiu/go-agent-skills/internal/tools/calculator"
-	"github.com/pardnchiu/go-agent-skills/internal/tools/file"
-	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
-	"github.com/pardnchiu/go-agent-skills/internal/utils"
+	"github.com/pardnchiu/agenvoy/internal/tools/apiAdapter"
+	"github.com/pardnchiu/agenvoy/internal/tools/apis"
+	"github.com/pardnchiu/agenvoy/internal/tools/apis/searchWeb"
+	"github.com/pardnchiu/agenvoy/internal/tools/browser"
+	"github.com/pardnchiu/agenvoy/internal/tools/calculator"
+	"github.com/pardnchiu/agenvoy/internal/tools/file"
+	toolTypes "github.com/pardnchiu/agenvoy/internal/tools/types"
+	"github.com/pardnchiu/agenvoy/internal/utils"
 )
 
 //go:embed embed/tools.json

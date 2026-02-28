@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/agenvoy/internal/agents/types"
 )
 
 const (

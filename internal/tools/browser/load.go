@@ -14,7 +14,7 @@ import (
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/proto"
-	"github.com/pardnchiu/go-agent-skills/internal/utils"
+	"github.com/pardnchiu/agenvoy/internal/utils"
 )
 
 //go:embed embed/stealth.js

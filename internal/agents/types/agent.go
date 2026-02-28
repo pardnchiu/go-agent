@@ -3,8 +3,8 @@ package agentTypes
 import (
 	"context"
 
-	"github.com/pardnchiu/go-agent-skills/internal/skill"
-	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	"github.com/pardnchiu/agenvoy/internal/skill"
+	toolTypes "github.com/pardnchiu/agenvoy/internal/tools/types"
 )
 
 type Agent interface {

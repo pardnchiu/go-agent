@@ -5,14 +5,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pardnchiu/go-agent-skills/internal/agents/exec"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/claude"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/compat"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/copilot"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/gemini"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/nvidia"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/openai"
-	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	"github.com/pardnchiu/agenvoy/internal/agents/exec"
+	"github.com/pardnchiu/agenvoy/internal/agents/provider/claude"
+	"github.com/pardnchiu/agenvoy/internal/agents/provider/compat"
+	"github.com/pardnchiu/agenvoy/internal/agents/provider/copilot"
+	"github.com/pardnchiu/agenvoy/internal/agents/provider/gemini"
+	"github.com/pardnchiu/agenvoy/internal/agents/provider/nvidia"
+	"github.com/pardnchiu/agenvoy/internal/agents/provider/openai"
+	agentTypes "github.com/pardnchiu/agenvoy/internal/agents/types"
 )
 
 func getAgentRegistry() agentTypes.AgentRegistry {

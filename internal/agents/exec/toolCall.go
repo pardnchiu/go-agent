@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
-	"github.com/pardnchiu/go-agent-skills/internal/tools"
-	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	agentTypes "github.com/pardnchiu/agenvoy/internal/agents/types"
+	"github.com/pardnchiu/agenvoy/internal/tools"
+	toolTypes "github.com/pardnchiu/agenvoy/internal/tools/types"
 )
 
 func toolCall(ctx context.Context, exec *toolTypes.Executor, choice agentTypes.OutputChoices, sessionData *agentTypes.AgentSession, events chan<- agentTypes.Event, allowAll bool, alreadyCall map[string]string) (*agentTypes.AgentSession, map[string]string, error) {

@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
-	"github.com/pardnchiu/go-agent-skills/internal/utils"
+	agentTypes "github.com/pardnchiu/agenvoy/internal/agents/types"
+	"github.com/pardnchiu/agenvoy/internal/utils"
 )
 
 func writeHistory(choice agentTypes.OutputChoices, configDir *utils.ConfigDirData, session *agentTypes.AgentSession) error {

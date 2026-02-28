@@ -8,10 +8,10 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/pardnchiu/go-agent-skills/internal/agents/exec"
-	"github.com/pardnchiu/go-agent-skills/internal/agents/provider/nvidia"
-	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
-	"github.com/pardnchiu/go-agent-skills/internal/skill"
+	"github.com/pardnchiu/agenvoy/internal/agents/exec"
+	"github.com/pardnchiu/agenvoy/internal/agents/provider/nvidia"
+	agentTypes "github.com/pardnchiu/agenvoy/internal/agents/types"
+	"github.com/pardnchiu/agenvoy/internal/skill"
 
 	"github.com/joho/godotenv"
 )

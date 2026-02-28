@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
-	"github.com/pardnchiu/go-agent-skills/internal/skill"
+	agentTypes "github.com/pardnchiu/agenvoy/internal/agents/types"
+	"github.com/pardnchiu/agenvoy/internal/skill"
 )
 
 //go:embed prompt/skillSelector.md

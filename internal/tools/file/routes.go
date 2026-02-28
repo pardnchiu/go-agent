@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	toolTypes "github.com/pardnchiu/go-agent-skills/internal/tools/types"
+	toolTypes "github.com/pardnchiu/agenvoy/internal/tools/types"
 )
 
 func Routes(e *toolTypes.Executor, name string, args json.RawMessage) (string, error) {

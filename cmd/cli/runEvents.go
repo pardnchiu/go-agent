@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/manifoldco/promptui"
-	agentTypes "github.com/pardnchiu/go-agent-skills/internal/agents/types"
+	agentTypes "github.com/pardnchiu/agenvoy/internal/agents/types"
 )
 
 func runEvents(_ context.Context, cancel context.CancelFunc, fn func(chan<- agentTypes.Event) error) error {

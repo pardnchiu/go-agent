@@ -62,7 +62,7 @@
 
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/@pardnchiu/quickui@latest/dist/QuickUI.js" as="script" />
 
-    <link rel="stylesheet" href="static/css/index.css" />
+    <link rel="stylesheet" href="static/css/index.css?v=2603012035" />
     <script src="https://cdn.jsdelivr.net/npm/@pardnchiu/quickui@latest/dist/QuickUI.js"></script>
   </head>
   <body>
@@ -104,13 +104,13 @@
       <section>
         <strong>RELEASE_HISTORY</strong>
         <section class="timeline">
-          <a :for="e in releases" href="">
-            <p>
+          <div :for="e in releases">
+            <a :href="e.href" target="_blank">
               <strong>{{e.tag}}</strong>
               <span class="date">{{e.date}}</span>
-            </p>
+            </a>
             <p>{{e.content}}</p>
-          </a>
+          </div>
         </section>
       </section>
 
@@ -118,7 +118,10 @@
         <strong>COMMIT_HISTORY</strong>
         <section class="timeline">
           <div :for="e in commits">
-            <p>{{e.date}}<span class="tag">{{e.tag}}</span></p>
+            <p :data-tag="e.tag">
+              {{e.date}}
+              <span class="tag">{{e.tag}}</span>
+            </p>
             <p>{{e.message}}</p>
           </div>
         </section>
@@ -159,6 +162,7 @@
                     date: app.event.toLocalDate(e.published_at),
                     tag: e.tag_name,
                     content: content,
+                    href: e.html_url,
                   };
                 });
 
@@ -169,8 +173,6 @@
                     tag: e.commit.message.split(":")[0].toUpperCase(),
                   };
                 });
-
-                console.log(json);
               } catch (err) {
                 console.error("Failed to fetch:", err);
               }

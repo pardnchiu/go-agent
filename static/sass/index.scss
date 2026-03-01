@@ -123,7 +123,6 @@ body {
         border-left: 1px solid var(--text);
         margin-left: 5px;
 
-        > a,
         > div {
           position: relative;
           margin-bottom: 2rem;
@@ -139,6 +138,7 @@ body {
             border-radius: 50%;
           }
 
+          > a:first-child,
           > p:first-child {
             display: flex;
             align-items: center;
@@ -151,7 +151,67 @@ body {
               color: var(--text);
             }
 
+            &[data-tag="FEAT"] > span.tag {
+              background: #2563eb;
+            }
+
+            &[data-tag="FIX"] > span.tag {
+              background: #dc2626;
+            }
+
+            &[data-tag="UPDATE"] > span.tag {
+              background: #7c3aed;
+            }
+
+            &[data-tag="ADD"] > span.tag {
+              background: #059669;
+            }
+
+            &[data-tag="REMOVE"] > span.tag {
+              background: #9ca3af;
+            }
+
+            &[data-tag="REFACTOR"] > span.tag {
+              background: #d97706;
+            }
+
+            &[data-tag="PERF"] > span.tag {
+              background: #0891b2;
+            }
+
+            &[data-tag="STYLE"] > span.tag {
+              background: #6b7280;
+            }
+
+            &[data-tag="DOC"] > span.tag {
+              background: #64748b;
+            }
+
+            &[data-tag="TEST"] > span.tag {
+              background: #0d9488;
+            }
+
+            &[data-tag="CHORE"] > span.tag {
+              background: #78716c;
+            }
+
+            &[data-tag="SECURITY"] > span.tag {
+              background: #b45309;
+            }
+
+            &[data-tag="BREAKING"] > span.tag {
+              background: #7f1d1d;
+              color: #fca5a5;
+            }
+
+            &[data-tag="RELEASE"] > span.tag {
+              background: #166534;
+              color: #bbf7d0;
+            }
+
             > span {
+              text-decoration: none;
+
               &.date {
                 font-weight: 400;
                 font-size: small;
@@ -172,16 +232,16 @@ body {
             font-size: small;
             color: var(--text);
           }
-        }
 
-        > a {
-          &,
-          * {
-            text-decoration: none;
-          }
+          > a {
+            &,
+            * {
+              text-decoration: none;
+            }
 
-          strong {
-            text-decoration: underline;
+            strong {
+              text-decoration: underline;
+            }
           }
         }
       }

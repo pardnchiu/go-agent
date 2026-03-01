@@ -12,7 +12,7 @@
 [![version](https://img.shields.io/github/v/tag/pardnchiu/agenvoy?label=release)](https://github.com/pardnchiu/agenvoy/releases)
 [![codecov](https://codecov.io/gh/pardnchiu/agenvoy/branch/master/graph/badge.svg)](https://codecov.io/gh/pardnchiu/agenvoy)
 
-> 內建 Skill 與 Agent 智能路由、跨輪次概要記憶，支援零程式碼掛載任意 REST API 工具
+> 以 Go 語言打造的 Agentic AI 平台，具備意圖導向技能路由、多 Provider LLM 派發、跨回合記憶與零程式碼 REST API 工具掛載。
 
 ## 目錄
 

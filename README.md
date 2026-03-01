@@ -12,7 +12,7 @@
 [![version](https://img.shields.io/github/v/tag/pardnchiu/agenvoy?label=release)](https://github.com/pardnchiu/agenvoy/releases)
 [![codecov](https://codecov.io/gh/pardnchiu/agenvoy/branch/master/graph/badge.svg)](https://codecov.io/gh/pardnchiu/agenvoy)
 
-> Intelligent skill and agent selection, cross-turn summary memory, and zero-code REST API tool mounting
+> A Go-based agentic AI platform with intent-to-skill routing, multi-provider LLM dispatch, cross-turn memory, and zero-code REST API tool mounting.
 
 ## Table of Contents
 

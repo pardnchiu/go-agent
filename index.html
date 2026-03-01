@@ -14,11 +14,11 @@
     <meta name="theme-color" content="#ffffff" />
     <meta name="robots" content="index, follow" />
 
-    <title>AGENVOY — Intelligent skill and agent selection — 邱敬幃 Pardn Chiu</title>
-    <meta name="title" content="AGENVOY — Intelligent skill and agent selection — 邱敬幃 Pardn Chiu" />
+    <title>AGENVOY — Agentic AI platform — 邱敬幃 Pardn Chiu</title>
+    <meta name="title" content="AGENVOY — Agentic AI platform — 邱敬幃 Pardn Chiu" />
     <meta
       name="description"
-      content="Intelligent skill and agent selection, cross-turn summary memory, and zero-code REST API tool mounting"
+      content="A Go-based agentic AI platform with intent-to-skill routing, multi-provider LLM dispatch, cross-turn memory, and zero-code REST API tool mounting."
     />
     <meta name="keywords" content="go, golang, backend, agenttools, agentic-ai, agentskills, pardnchiu, 邱敬幃" />
     <meta name="author" content="邱敬幃 Pardn Chiu" />
@@ -29,10 +29,10 @@
     <!--<link rel="icon" href="https://quickui.pardn.io/static/image/logo.png" type="image/x-icon" />-->
 
     <!-- Open Graph -->
-    <meta property="og:title" content="AGENVOY — Intelligent skill and agent selection — 邱敬幃 Pardn Chiu" />
+    <meta property="og:title" content="AGENVOY — Agentic AI platform — 邱敬幃 Pardn Chiu" />
     <meta
       property="og:description"
-      content="Intelligent skill and agent selection, cross-turn summary memory, and zero-code REST API tool mounting"
+      content="A Go-based agentic AI platform with intent-to-skill routing, multi-provider LLM dispatch, cross-turn memory, and zero-code REST API tool mounting."
     />
     <meta property="og:image" content="https://agenvoy.com/doc/cover.png" />
     <meta property="og:url" content="https://agenvoy.com/" />
@@ -45,7 +45,7 @@
     <meta property="twitter:title" content="AGENVOY — Intelligent skill and agent selection — 邱敬幃 Pardn Chiu" />
     <meta
       property="twitter:description"
-      content="Intelligent skill and agent selection, cross-turn summary memory, and zero-code REST API tool mounting"
+      content="A Go-based agentic AI platform with intent-to-skill routing, multi-provider LLM dispatch, cross-turn memory, and zero-code REST API tool mounting."
     />
     <meta property="twitter:image" content="https://agenvoy.com/doc/cover.png" />
     <meta property="twitter:url" content="https://agenvoy.com/" />
@@ -64,6 +64,51 @@
 
     <link rel="stylesheet" href="static/css/index.css?v=2603012035" />
     <script src="https://cdn.jsdelivr.net/npm/@pardnchiu/quickui@latest/dist/QuickUI.js"></script>
+
+    <!-- JSON-LD Schema -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "datePublished": "2026-03-01",
+        "dateModified": "2026-03-01",
+        "inLanguage": "zh-TW",
+        "name": {
+          "@language": "zh-TW",
+          "@value": "AGENVOY — Agentic AI platform — 邱敬幃 Pardn Chiu"
+        },
+        "alternateName": {
+          "@language": "en",
+          "@value": "AGENVOY — Agentic AI platform — 邱敬幃 Pardn Chiu"
+        },
+        "description": {
+          "@language": "zh-TW",
+          "@value": "以 Go 語言打造的 Agentic AI 平台，具備意圖導向技能路由、多 Provider LLM 派發、跨回合記憶與零程式碼 REST API 工具掛載。"
+        },
+        "alternateDescription": {
+          "@language": "en",
+          "@value": "A Go-based agentic AI platform with intent-to-skill routing, multi-provider LLM dispatch, cross-turn memory, and zero-code REST API tool mounting."
+        },
+        "url": ["https://agenvoy.com/"],
+        "creator": {
+          "@type": "Person",
+          "name": [
+            {
+              "@language": "zh-TW",
+              "@value": "邱敬幃"
+            },
+            {
+              "@language": "en",
+              "@value": "Pardn Chiu"
+            }
+          ],
+          "url": "https://pardn.io/",
+          "sameAs": ["https://github.com/pardnchiu"],
+          "email": "dev@pardn.io"
+        }
+        // "image": "https://quickui.pardn.io/static/image/website.jpg"
+      }
+    </script>
   </head>
   <body>
     <section id="app">
@@ -155,7 +200,7 @@
                 let json = await request.json();
 
                 app.data.description = json.repo.description;
-                app.data.updatedAt = json.repo.updated_at;
+                app.data.updatedAt = app.event.toLocalDate(json.repo.updated_at);
                 app.data.releases = json.releases.slice(0, 3).map((e) => {
                   let content = e.body.split("\r\n")[4];
                   return {
